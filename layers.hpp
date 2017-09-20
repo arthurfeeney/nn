@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <vector>
 #include <utility>
+#include <string>
+#include <tuple>
 
 #include "aux.hpp"
 #include "loss.hpp"
@@ -9,6 +11,11 @@
 #ifndef LAYERS_HPP
 #define LAYERS_HPP
 
+// Put these in separate files sometime.  
+
+/*
+* Make conv use matrix. im2col before input and reshape after get output.
+*/
 
 template <typename Weight = double>
 class Layer {
@@ -23,16 +30,20 @@ protected:
     Matrix last_input;
     Matrix last_output;
 
+    std::string layer_type;
+
 public:
-    Layer() {}
+    Layer(std::string layer_type): layer_type(layer_type) {}
     
-    Layer(int num_nodes, int input_size):
+    // layer sets sizes of stuff and the name of the layer.
+    Layer(int num_nodes, int input_size, std::string layer_type):
         // set weights to random values. KxN
         weights(input_size, std::vector<Weight>(num_nodes, 0)), 
         // bias initially zero. 1xN
         bias(1, std::vector<Weight>(num_nodes, 0)),
         size(num_nodes), 
-        input_size(input_size) 
+        input_size(input_size), 
+        layer_type(layer_type)
     {}
     
     ~Layer() = default;
@@ -78,14 +89,19 @@ public:
     
     virtual Matrix operator()(const Matrix& input) = 0;
 
-    Matrix get_weights() {
+    Matrix get_weights() const {
         return weights;
+    }
+
+    std::string type() const {
+        return layer_type;
     }
 
 };
 
 template<typename Weight = double>
 struct Loss_Cross_Entropy {
+
     using Matrix = std::vector<std::vector<Weight>>;
     
     Loss_Cross_Entropy() {}
@@ -112,7 +128,6 @@ struct Loss_Cross_Entropy {
         Matrix&& d_loss = backward_pass(probs, actual);
         return d_loss;
     }
-
 };
 
 // very incomplete. Can't do regression rn. :(
@@ -139,19 +154,19 @@ struct Squared_Error_Loss {
     }
 };
 
+/*
+ * relu functions should be templated to take different types.
+ */
 template <typename Weight = double>
-class Relu : public Layer<Weight> {
-private:
+struct Relu : public Layer<Weight> {
     using Matrix = std::vector<std::vector<Weight>>;
 
-public:
-
-    Relu(): Layer<Weight>() {}
+    Relu(): Layer<Weight>("relu") {}
 
     Relu(Relu&& other):Layer<Weight>(std::move(other)) {}
 
     Relu(const Relu& other): Layer<Weight>(other) {}
-
+    
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;
         return aux::relu(input);
@@ -176,16 +191,15 @@ public:
     }
 };
 
-// treated as a functor.
+// used as a functor, but needs initialization.
 template <typename Weight = double>
-class Dense : public Layer<Weight> {
-private:
+struct Dense : public Layer<Weight> {
     using Matrix = std::vector<std::vector<Weight>>;
-public:
-    Dense():Layer<Weight>() {}
+
+    Dense():Layer<Weight>("dense") {}
     // constructor sets size and default values of weights.  
     Dense(int num_nodes, int input_size):
-        Layer<Weight>(num_nodes, input_size)
+        Layer<Weight>(num_nodes, input_size, "dense")
     {
         for(auto& row : this->weights) {
             for(auto& item : row) {
@@ -201,6 +215,7 @@ public:
     Dense(const Dense& other): Layer<Weight>(other) {}
 
     Matrix forward_pass(const Matrix& input) {
+        // computes output of a layer based on input and its weights.
         // input is 1xK (a one by I matrix).
         this->last_input = input;
         // produces a 1xN matrix. From 1xK, KxN
@@ -221,13 +236,13 @@ public:
         * updates weights and bias. Returns gradient of input.
         * requires:
         * - last_input: data input to network. 1xI
-        * - dout: derivative for backprop.
+        * - dout: derivative of previous layer..
         * - weights: layers weights.KxN
         * - bias: layers bias. 1xN
         * finds gradients for weights, bias, and input to feed to next
         *  layer.
         */        
-        double step_size = 1e-3;
+        double step_size = 1e-3; // learning rate
         auto d_weights = aux::matmul(aux::transpose(this->last_input), 
                                      d_out);
         
@@ -254,5 +269,90 @@ public:
         return d_input; // used for next layer. 
     }
 };
+
+template<typename Weight = double>
+class Conv2d : public Layer<Weight> {    
+public:    
+    using Matrix = std::vector<std::vector<Weight>>;
+
+    /*
+     * add padding eventually.
+     */
+    // dimensions.begin() + 2 should be depth.
+    Conv2d(size_t num_filters, size_t filter_size, size_t stride, 
+           std::initializer_list<Weight> dimensions):
+            Layer<Weight>(num_filters, 
+                          filter_size * filter_size * dimensions.begin() + 2,
+                          "conv2d"),
+            filter_size(filter_size),
+            stride(stride),
+            row_length(filter_size * filter_size * dimensions.begin() + 2)
+    {
+        for(int row = 0; row < this->size; ++row) {
+            for(int col = 0; col < row_length; ++col) {
+                this->weights[row][col] = aux::gen_double(-.1, .1);
+            }
+        }
+    }
+
+
+    Matrix forward_pass(const Matrix& col_matrix) {
+        this->last_input = col_matrix;
+        this->last_output = aux::matmul(this->weights, col_matrix); 
+        return this->last_output;
+    }
+
+    Matrix operator()(const Matrix& col_matrix) {
+        return forward_pass(col_matrix);
+    }
+
+    Matrix backward_pass(const Matrix& d_out) {
+        
+    }
+
+    // used to reshape output.
+    std::tuple<int, int, int> proper_output_dim() const {
+        int height;
+        int width;
+        int depth = this->size;
+        return std::tuple<int, int, int>(height, width, depth);
+    }
+
+private:
+    // this->size is the number of filters.
+    size_t filter_size;
+    size_t stride;
+    
+    size_t row_length;
+};
+
+
+
+template<typename Weight = double>
+class MaxPool2d : public Layer<Weight> {
+public:
+    
+    using Matrix = std::vector<std::vector<Weight>>;
+    
+    using Image = std::vector<Matrix>;
+    
+    MaxPool2d(std::initializer_list<Weight> dimensions) {
+
+    }
+
+    Image forward_pass(const Image& input) {
+
+    }
+
+    Image backward_pass(const Image& d_out) {
+
+    }
+private:
+    
+    Image last_input;
+    Image last_output;
+};
+
+
 
 #endif

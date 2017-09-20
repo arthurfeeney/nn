@@ -12,6 +12,8 @@ using std::make_unique;
 using std::pair;
 using std::make_pair;
 
+using Matrix = vector<vector<double>>;
+
 void print(vector<vector<double>>& m) {
     for(auto& row : m) {
         for(auto& item : row) {
@@ -21,7 +23,6 @@ void print(vector<vector<double>>& m) {
     }
 }
 
-using Matrix = vector<vector<double>>;
 pair<vector<Matrix>, vector<Matrix>> generate_data(int size) {
     vector<Matrix> random_data(size, Matrix{{0}});
     vector<Matrix> labels(size, Matrix{{0, 0}});
@@ -69,7 +70,7 @@ int main(void) {
 
 //    Net<double> net;
 
-    pair<vector<Matrix>, vector<Matrix>> data = generate_data(10000);
+    pair<vector<Matrix>, vector<Matrix>> data = generate_data(1000);
 
     auto stuff = data.first;
     auto labels = data.second;
@@ -100,6 +101,8 @@ int main(void) {
         new Relu<>(),
         new Dense<>(2, 100)
     });*/
+
+    //auto conv = Conv2d<double>(5, 3, 2, {3,3});
 
     Net<double> net({
         "dense 100 1",

@@ -11,27 +11,22 @@
 #include "layers.hpp"
 #include "aux.hpp"
 
+#ifndef NET_HPP
+#define NET_HPP
+
 template<typename Weight = double>
 class Net {
 private:
 
     using Matrix = std::vector<std::vector<Weight>>;
+    using Image = std::vector<Matrix>;
 
-    std::vector<Layer<Weight>*> layers;
+
+    std::vector<std::unique_ptr<Layer<Weight>>> layers;
     Loss_Cross_Entropy<Weight> loss;
-
     
-
 public:
     Net():loss() {}
-    
-    Net(std::initializer_list<Layer<Weight>*> input):
-        layers(input.size()), loss()
-        {
-            for(auto iter = input.begin(); iter != input.end(); ++iter) {
-                layers[iter - input.begin()] = *iter;
-            }
-        }
 
     Net(const std::initializer_list<std::string>& input):
         layers(input.size())
@@ -43,19 +38,36 @@ public:
                              boost::is_any_of("\t ,"));
                 for(auto iter = split_layer_string.begin();
                     iter != split_layer_string.end()
-                    ; ) 
+                    ; ) // gross
                 {
                     if(*iter == "\0") iter = split_layer_string.erase(iter);
                     else ++iter;
                 }
                 if(split_layer_string[0] == "dense") {
                     layers[iter - input.begin()] = 
-                        new Dense<Weight>(std::stoi(split_layer_string[1]), 
-                                          std::stoi(split_layer_string[2]));
+                        std::unique_ptr<Layer<Weight>>(
+                            new Dense<Weight>(std::stoi(split_layer_string[1]), 
+                                              std::stoi(split_layer_string[2]))
+                        );
                 }
+
                 else if(split_layer_string[0] == "relu") {
-                    layers[iter - input.begin()] = new Relu<Weight>();
+                    layers[iter - input.begin()] = 
+                        std::unique_ptr<Layer<Weight>>(new Relu<Weight>());
                 }
+/*
+                else if(split_layer_string[0] == "conv2d") {
+
+                    layers[iter - input.begin()] =
+                        std::unique_ptr<Layer<Weight>>(
+                            new Conv2d<Weight>(
+                                std::stoi(split_layer_string[1]),
+                                std::stoi(split_layer_string[2]),
+                                std::stoi(split_layer_string[3]),
+
+                            )
+                        );
+                }*/
             }            
         }
 
@@ -70,14 +82,28 @@ public:
     }
 
     Matrix predict(Matrix input) {
-        for(auto& layer : layers) {
-            input = layer->forward_pass(input);
+        Matrix& trans = input;
+        for(const auto& layer : layers) {
+            trans = layer->forward_pass(trans);
         }
-        return input;
+        return trans;
+    }
+
+    // need to flatten all images to matrix, before input. 
+    Image predict(Image input) {
+        Image& trans_image = input;
+        for(const auto& layer : layers) {
+            Matrix&& column_trans = mat_aux::image_to_col(trans_image);
+            column_trans = layer->forward_pass(column_trans);
+            //trans_iamge = mat_aux::reshape(column_trans)
+        }
     }
     
-    Layer<Weight>* operator[](int index) {
+    Layer<Weight> operator[](int index) {
         // returns layer at input index;
-        return layers[index];
+        return *layers[index];
     }
-}; 
+};
+
+
+#endif 

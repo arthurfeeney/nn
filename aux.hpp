@@ -16,6 +16,7 @@
 
 namespace aux {
     // assumes depth of 2 i.e. vector<vector>, not vector<vector<...>...>
+    // stuff needs to be flattened to vector<vector> and then reshaped. 
     template<typename Container>
     auto relu(const Container& c) -> Container {
         Container copy_container(c);
@@ -132,7 +133,73 @@ namespace aux {
         std::uniform_real_distribution<double> unif(lower, upper);
         return unif(re);
     }
+    
+}
 
-};
+namespace mat_aux {
+    template<typename Weight = double>
+    using Matrix = std::vector<std::vector<Weight>>;
+    template<typename Weight = double>
+    using Image = std::vector<Weight>;
+
+    template<typename Weight = double>
+    Matrix<Weight> get_block(const Image<Weight>& input, size_t row_index, 
+                     size_t col_index, size_t filter_size) 
+    {
+        Matrix<Weight> block(filter_size, std::vector<Weight>(filter_size));
+        for(size_t row = row_index; row < filter_size; ++row) {
+            for(size_t col = col_index; col < filter_size; ++col) {
+                block[row - row_index][col - col_index] = input[row][col];
+            }
+        }    
+        return block;
+    }
+
+    template<typename Weight = double>
+    std::vector<Weight> block_to_col(const Image<Weight>& block) {
+        std::vector<Weight> column(block.size() * block[0].size() *
+                                   block[0][0].size());
+        size_t index = 0;
+        for(size_t row = 0; row < block.size(); ++row) {
+            for(size_t col = 0; col < block[0].size(); ++col) {
+                for(size_t depth = 0; depth < block[0][0].size(); ++depth) {
+                    column[index] = block[row][col][depth];
+                    ++index;
+                }
+            }
+        }
+        return column;
+    }
+
+    template<typename Weight = double>
+    Matrix<Weight> image_to_col(const Image<Weight>& input, size_t filter_size, 
+                        size_t stride) 
+    {
+        Matrix<Weight> column_matrix;
+
+        for(size_t row = 0; 
+            row < input.size() - filter_size; 
+            row += stride) 
+        {
+            for(size_t col = 0;
+                col  < input[0].size() - filter_size;
+                col += stride)
+            {
+                Matrix<Weight> block = get_block(input, row, col, filter_size);
+                column_matrix.push_back(block_to_col(block));
+            }
+        } 
+        return column_matrix;
+    }
+
+    template<typename Weight = double>
+    Image<Weight> mat_to_image(const Matrix<Weight>& input, size_t height, 
+                               size_t width, size_t depth) 
+    {
+        Image<Weight>(height, 
+                      Matrix<Weight>(width, std::vector<Weight>(depth)));
+        
+    }
+}
 
 #endif
