@@ -44,15 +44,22 @@ pair<vector<Matrix>, vector<Matrix>> generate_data(int size) {
 
 
 int main(void) {
-  
+
     vector<vector<double>> input{{3,2,1,4,5}};
     vector<vector<double>> actual{{0,0,1,0,0}};
+/*
+    Matrix love{{1,2,3}};
+    auto poop = aux::flatten(love);
+    for(auto& item : poop) {
+      std::cout << item;
+    }
+*/
 /*
     Dense<> d1(5, 5);
     Relu<> r1;
     Dense<> d2(5, 5);
     Loss<> l;
-    
+
     auto s1 = d1(input);
     auto s2 = r1(s1);
     auto s3 = d2(s2);
@@ -70,11 +77,6 @@ int main(void) {
 
 //    Net<double> net;
 
-    pair<vector<Matrix>, vector<Matrix>> data = generate_data(1000);
-
-    auto stuff = data.first;
-    auto labels = data.second;
-
 /*
     Dense<> d1(100,1);
     Relu<> r1;
@@ -82,11 +84,11 @@ int main(void) {
     Relu<> r2;
     Dense<> d3(2, 100);
     //Dense<> d2(100, 1);
-    
-    // make net take unique pointers, or use the string parsing thing. 
+
+    // make net take unique pointers, or use the string parsing thing.
 
     Net<double> net({
-        &d1, 
+        &d1,
         &r1,
         &d2,
         &r2,
@@ -104,7 +106,13 @@ int main(void) {
 
     //auto conv = Conv2d<double>(5, 3, 2, {3,3});
 
+    pair<vector<Matrix>, vector<Matrix>> data = generate_data(10000);
+
+    auto stuff = data.first;
+    auto labels = data.second;
+
     Net<double> net({
+        //"conv2d 1 1 1 1 1 1"
         "dense 100 1",
         "relu",
         "dense 100 100",
@@ -133,14 +141,14 @@ int main(void) {
         &r1
     };*/
     //auto poo = (*net[0])(input);
-   
-/*    
+
+/*
     auto poo = net.predict(input);
     print(poo);
 
     Net<> net;
     net.predict(input);
-*/  
+*/
   //net[0](input);
 
     //print(net[0]);
@@ -149,5 +157,7 @@ int main(void) {
     auto val = poo(input);
     print(val);
     */
+
+
     return 0;
 }
