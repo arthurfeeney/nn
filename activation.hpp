@@ -11,14 +11,15 @@
 #define ACTIVATION_HPP
 
 template <typename Weight = double>
-struct Relu : public Layer<Weight> {
+struct Relu : public Layer_2D<Weight> {
     using Matrix = std::vector<std::vector<Weight>>;
+    using Image = std::vector<Matrix>;
 
-    Relu(): Layer<Weight>("relu") {}
+    Relu(): Layer_2D<Weight>("relu") {}
 
-    Relu(Relu&& other):Layer<Weight>(std::move(other)) {}
+    Relu(Relu&& other):Layer_2D<Weight>(std::move(other)) {}
 
-    Relu(const Relu& other): Layer<Weight>(other) {}
+    Relu(const Relu& other): Layer_2D<Weight>(other) {}
 
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;

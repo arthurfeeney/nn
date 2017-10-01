@@ -11,15 +11,20 @@
 #ifndef DENSE_HPP
 #define DENSE_HPP
 
-// used as a functor, but needs initialization.
-template <typename Weight = double>
-struct Dense : public Layer<Weight> {
-    using Matrix = std::vector<std::vector<Weight>>;
 
-    Dense():Layer<Weight>("dense") {}
+/*
+ * make it so that the range of initial values can (optionally?) be passed in
+ */
+
+template <typename Weight = double>
+struct Dense : public Layer_2D<Weight> {
+    using Matrix = std::vector<std::vector<Weight>>;
+    using Image = std::vector<Matrix>;
+
+    Dense():Layer_2D<Weight>("dense") {}
     // constructor sets size and default values of weights.
     Dense(int num_nodes, int input_size):
-        Layer<Weight>(num_nodes, input_size, "dense")
+        Layer_2D<Weight>(num_nodes, input_size, "dense")
     {
         for(auto& row : this->weights) {
             for(auto& item : row) {
@@ -28,11 +33,11 @@ struct Dense : public Layer<Weight> {
         }
     }
 
-    ~Dense() = default; // nothing to delete, really
+    ~Dense() = default;
 
-    Dense(Dense&& other): Layer<Weight>(std::move(other)) {}
+    Dense(Dense&& other): Layer_2D<Weight>(std::move(other)) {}
 
-    Dense(const Dense& other): Layer<Weight>(other) {}
+    Dense(const Dense& other): Layer_2D<Weight>(other) {}
 
     Matrix forward_pass(const Matrix& input) {
         // computes output of a layer based on input and its weights.
@@ -56,7 +61,7 @@ struct Dense : public Layer<Weight> {
         * updates weights and bias. Returns gradient of input.
         * requires:
         * - last_input: data input to network. 1xI
-        * - dout: derivative of previous layer..
+        * - dout: derivative of previous layer.
         * - weights: layers weights.KxN
         * - bias: layers bias. 1xN
         * finds gradients for weights, bias, and input to feed to next
@@ -87,6 +92,14 @@ struct Dense : public Layer<Weight> {
         }
 
         return d_input; // used for next layer.
+    }
+
+    size_t layer_size() const {
+        return this->size;
+    }
+
+    Matrix read_weights() const {
+        return this->weight;
     }
 };
 

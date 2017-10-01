@@ -12,14 +12,15 @@
 #define LAYERS_HPP
 
 template <typename Weight = double>
-class Layer {
+class Layer_2D {
 protected:
     using Matrix = std::vector<std::vector<Weight>>;
+    using Image = std::vector<Matrix>;
 
     Matrix weights;
     Matrix bias;
-    int size;
-    int input_size;
+    size_t size;
+    size_t input_size;
 
     Matrix last_input;
     Matrix last_output;
@@ -27,10 +28,10 @@ protected:
     std::string layer_type;
 
 public:
-    Layer(std::string layer_type): layer_type(layer_type) {}
+    Layer_2D(std::string layer_type): layer_type(layer_type) {}
 
     // layer sets sizes of stuff and the name of the layer.
-    Layer(int num_nodes, int input_size, std::string layer_type):
+    Layer_2D(size_t num_nodes, size_t input_size, std::string layer_type):
         // set weights to random values. KxN
         weights(input_size, std::vector<Weight>(num_nodes, 0)),
         // bias initially zero. 1xN
@@ -40,9 +41,9 @@ public:
         layer_type(layer_type)
     {}
 
-    ~Layer() = default;
+    ~Layer_2D() = default;
 
-    Layer(Layer&& other):
+    Layer_2D(Layer_2D&& other):
         weights(other.weights),
         bias(other.bias),
         size(other.size),
@@ -53,7 +54,7 @@ public:
         other.input_size = 0;
     }
 
-    Layer& operator=(Layer&& other) {
+    Layer_2D& operator=(Layer_2D&& other) {
         if(this != &other) {
             weights = other.weights;
             bias = other.bias;
@@ -65,17 +66,13 @@ public:
         return *this;
     }
 
-    Layer(const Layer& other):
+    Layer_2D(const Layer_2D& other):
         weights(other.weights),
         bias(other.bias),
         size(other.size),
         input_size(other.input_size),
         last_input(other.last_input),
         last_output(other.last_output) {}
-
-    Layer& operator=(const Layer& other) {
-
-    }
 
     virtual Matrix forward_pass(const Matrix& input) = 0;
 
@@ -149,7 +146,7 @@ struct Squared_Error_Loss {
 };
 
 template<typename Weight = double>
-class MaxPool2d : public Layer<Weight> {
+class MaxPool2d : public Layer_2D<Weight> {
 public:
 
     using Matrix = std::vector<std::vector<Weight>>;

@@ -13,6 +13,7 @@ using std::pair;
 using std::make_pair;
 
 using Matrix = vector<vector<double>>;
+using Image = vector<Matrix>;
 
 void print(vector<vector<double>>& m) {
     for(auto& row : m) {
@@ -112,7 +113,7 @@ int main(void) {
     auto labels = data.second;
 
     Net<double> net({
-        //"conv2d 1 1 1 1 1 1"
+        //"conv2d 1 1 1 1 1 1 1"
         "dense 100 1",
         "relu",
         "dense 100 100",
@@ -134,6 +135,45 @@ int main(void) {
 
     std::cout << index;
     std::cout << '\n';
+
+    // SIMPLE CONV TEST. JUST TO GET IT TO RUN.
+    Image conv_test {
+        {
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1}
+        },
+        {
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1}
+        },
+        {
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1}
+        },
+        {
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1} 
+        }
+    };
+    
+    Conv2d<double> live(4, 3, 1, 3, 3, 4, 0);
+    
+    auto out = live.forward_pass(conv_test);
+
+    for(auto& height : out) {
+        for(auto& width : height) {
+            for(auto& depth : width) {
+                std::cout << depth << ' ';
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+
 
     // NEED TO USE POINTERS FOR THIS STUFF :(
     /*vector<Layer<>*> stuff {

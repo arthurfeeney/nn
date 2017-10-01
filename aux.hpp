@@ -49,6 +49,16 @@ namespace aux {
         return copy_container;
     }
 
+    // relu for 3d containers. I.E. convolutions!
+    template<typename Container>
+    auto relu3d(const Container& c) -> Container {
+        Container copy_container(c);
+        for(auto& lover : copy_container) {
+            lover = relu(lover);
+        }
+        return copy_container;
+    }
+
     template<typename Vect>
     auto dot(const Vect& v1, const Vect& v2) -> Vect {
         if(v1.size() != v2.size()) {
