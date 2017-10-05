@@ -14,6 +14,7 @@
 #include "dense.hpp"
 #include "activation.hpp"
 #include "conv2d.hpp"
+#include "dropout.hpp"
 
 #ifndef NET_HPP
 #define NET_HPP

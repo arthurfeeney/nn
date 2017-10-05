@@ -19,7 +19,7 @@ public:
 
     Conv2d(size_t num_filters, size_t filter_size, size_t stride,
            size_t input_height, size_t input_width, size_t input_depth,
-           bool padding):
+           size_t padding):
             Layer_3D<Weight>("conv2d", input_height, input_width, 
                              input_depth), 
             filter_size(filter_size),
@@ -75,14 +75,18 @@ public:
         padding(other.padding) 
     {}
 
-    // highest quality code!!!
+    // highest quality code!
+    // filters are height*width*depth. Images are depth*width*height. -____- im dumb.
     Image forward_pass(const Image& input) {
         std::tuple<int, int, int> output_dims = proper_output_dim();
         const size_t output_height = std::get<0>(output_dims);
         const size_t output_width = std::get<1>(output_dims);
         const size_t output_depth = std::get<2>(output_dims);
-        Image image_output(output_height, Matrix(output_width, 
-                                           std::vector<double>(output_depth, 0)));
+
+        Image image_output(output_depth, 
+                           Matrix(output_height, 
+                                  std::vector<double>(output_width, 0)));
+
         size_t depth_count = 0;
         for(const auto& filter : filters) {
             for(int depth = 0; depth < this->input_depth; ++depth) {
@@ -98,8 +102,8 @@ public:
                 for(size_t row_front = 0, out_row = 0; 
                     row_front < input.size() - filter_size; 
                     row_front += stride, ++out_row) {
-                    for(size_t col_front = 0, out_col = 0; 
-                        col_front < input[0].size() - filter_size + 1; 
+                    for(size_t col_front = 0, out_col = 0;
+                        col_front < input[0].size() - filter_size; 
                         col_front += stride, ++out_col) 
                     {
                         // get splice of image.
@@ -114,23 +118,24 @@ public:
                                 ++col)
                             {
                                 image_splice[row-row_front][col-col_front] =
-                                    input[row][col][depth];
+                                    input[depth][row][col];
                             }
                         }
-                        Matrix res(filter_size, std::vector<Weight>(filter_size));
+                        // build outputs from window
+                        Matrix window(filter_size, std::vector<Weight>(filter_size));
                         for(int row = 0; row < filter_size; ++row) {
                             for(int col = 0; col < filter_size; ++col) {
-                                res[row][col] = image_splice[row][col] * 
-                                                filter_at_depth[row][col];
+                                window[row][col] = image_splice[row][col] * 
+                                                    filter_at_depth[row][col];
                             }
                         }
-                        Weight elem_res_sum = 0; 
-                        for(const auto& row : res) {
+                        Weight elem_window_sum = 0; 
+                        for(const auto& row : window) {
                             for(const auto& value : row) {
-                                elem_res_sum += value;
+                                elem_window_sum += value;
                             }
                         }
-                        image_output[out_row][out_col][depth_count] = elem_res_sum;
+                        image_output[depth_count][out_row][out_col] += elem_window_sum;
                     }
                 }
             }
@@ -144,14 +149,13 @@ public:
     }
 
     Image backward_pass(const Image& d_out) {
-        return Image();
+        return d_out;
     }
-
-    // used to reshape output.
+ 
     std::tuple<int, int, int> proper_output_dim() const {
         int depth = num_filters;
-        int height = (this->input_height - filter_size) / stride + 1;
-        int width = (this->input_width - filter_size) / stride + 1;
+        int height = (this->input_height - filter_size) / stride;
+        int width = (this->input_width - filter_size) / stride;
         return std::tuple<int, int, int>(height, width, depth);
     }
 
@@ -162,7 +166,7 @@ private:
     size_t filter_size;
     size_t stride;
 
-    bool padding;
+    size_t padding;
 };
 
 #endif

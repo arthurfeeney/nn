@@ -139,28 +139,32 @@ int main(void) {
     // SIMPLE CONV TEST. JUST TO GET IT TO RUN.
     Image conv_test {
         {
-            {1, 1, 1},
-            {1, 1, 1},
-            {1, 1, 1}
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1}
         },
         {
-            {1, 1, 1},
-            {1, 1, 1},
-            {1, 1, 1}
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1}
         },
         {
-            {1, 1, 1},
-            {1, 1, 1},
-            {1, 1, 1}
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1}
         },
         {
-            {1, 1, 1},
-            {1, 1, 1},
-            {1, 1, 1} 
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1},
+            {1, 1, 1, 1} 
         }
     };
-    
-    Conv2d<double> live(4, 3, 1, 3, 3, 4, 0);
+    // number of filters, filter size, stride, input height, wdith, depth, padding 
+    Conv2d<double> live(4, 3, 1, 4, 4, 4, 0);
     
     auto out = live.forward_pass(conv_test);
 
