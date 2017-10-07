@@ -167,7 +167,7 @@ int main(void) {
     Conv2d<double> live(4, 3, 1, 4, 4, 4, 0);
     
     auto out = live.forward_pass(conv_test);
-
+    live.backward_pass(out);
     for(auto& height : out) {
         for(auto& width : height) {
             for(auto& depth : width) {

@@ -86,7 +86,6 @@ struct Dense : public Layer_2D<Weight> {
         }
 
         // bias is a matrix, d_bias is a vector (just cuz im dumb.)
-
         for(size_t row = 0; row < this->bias.size(); ++row) {
             this->bias[row][0] += -step_size * d_bias[row];
         }
