@@ -22,8 +22,10 @@ public:
 
     Layer_3D(std::string layer_type, size_t input_height, size_t input_width,
              size_t input_depth):
-        layer_type(layer_type), input_height(input_height), 
-        input_width(input_width), input_depth(input_depth)
+        input_height(input_height), 
+        input_width(input_width), 
+        input_depth(input_depth),
+        layer_type(layer_type)
     {}
 
     Layer_3D(Layer_3D&& other):

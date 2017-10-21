@@ -20,7 +20,6 @@ namespace aux {
     template<typename Matrix>
     auto flatten(const Matrix& m) ->
         typename std::remove_reference<decltype(m[0])>::type {
-        // I apoligize to anyone who may read what follows...
         auto flat =
             typename std::remove_reference<
                 decltype(m[0])
@@ -36,17 +35,15 @@ namespace aux {
 
     }
     // assumes depth of 2 i.e. vector<vector>, not vector<vector<...>...>
-    // stuff needs to be flattened to vector<vector> and then reshaped.
-    template<typename Container>
-    auto relu(const Container& c) -> Container {
-        Container copy_container(c);
-        for(auto& row: copy_container) {
-            std::transform(row.begin(), row.end(), row.begin(),
-                           [](double item) {
-                                return std::max(item, 0.0);
-                           });
+    template<typename Matrix>
+    auto relu(const Matrix& c) -> Matrix {
+        Matrix relud_c(c.size(), std::vector<double>(c[0].size(), 0));
+        for(int i = 0; i < c.size(); ++i) {
+            for(int j = 0; j < c[0].size(); ++j) {
+                relud_c[i][j] = std::max<double>(c[i][j], 0);
+            }
         }
-        return copy_container;
+        return relud_c;
     }
 
     // relu for 3d containers. I.E. convolutions!
@@ -79,10 +76,7 @@ namespace aux {
             std::cout << m2.size() << '\n';
 
         }
-        Matrix prod(m1.size());
-        for(auto& item : prod) {
-            item.resize(m2[0].size());
-        }
+        Matrix prod(m1.size(), std::vector<double>(m2[0].size(), 0));
         for(size_t row = 0; row < m1.size(); ++row) {
             for(size_t col = 0; col < m2[0].size(); ++col) {
                 for(size_t inner = 0; inner < m2.size(); ++inner) {
@@ -98,10 +92,7 @@ namespace aux {
         if(m1.size() != m2.size() || m1[0].size() != m2[0].size()) {
             throw("matrix dimension not equal.");
         }
-        Matrix summed(m1.size());
-        for(auto& item : summed) {
-            item.resize(m1[0].size());
-        }
+        Matrix summed(m1.size(), std::vector<double>(m1[0].size(), 0));
         for(size_t row = 0; row < m1.size(); ++row) {
             for(size_t col = 0; col < m1[0].size(); ++col) {
                 summed[row][col] = m1[row][col] + m2[row][col];

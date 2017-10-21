@@ -6,6 +6,8 @@
 #include "aux.hpp"
 #include "layers.hpp"
 #include "net.hpp"
+#include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
+
 
 using std::vector;
 using std::make_unique;
@@ -45,7 +47,7 @@ pair<vector<Matrix>, vector<Matrix>> generate_data(int size) {
 
 
 int main(void) {
-
+    std::cout << "love";
     vector<vector<double>> input{{3,2,1,4,5}};
     vector<vector<double>> actual{{0,0,1,0,0}};
 /*
@@ -106,8 +108,8 @@ int main(void) {
     });*/
 
     //auto conv = Conv2d<double>(5, 3, 2, {3,3});
-
-    pair<vector<Matrix>, vector<Matrix>> data = generate_data(10000);
+/*
+    pair<vector<Matrix>, vector<Matrix>> data = generate_data(1000);
 
     auto stuff = data.first;
     auto labels = data.second;
@@ -164,11 +166,14 @@ int main(void) {
         }
     };
     // number of filters, filter size, stride, input height, wdith, depth, padding 
-    Conv2d<double> live(4, 3, 1, 4, 4, 4, 0);
+    Conv2d<double> live(4, 3, 1, 4, 4, 4, 1);
+    Conv2d<double> live2(4, 3, 1, 4, 4, 4, 1);
     
-    auto out = live.forward_pass(conv_test);
-    live.backward_pass(out);
-    for(auto& height : out) {
+    auto out1 = live.forward_pass(conv_test);
+    auto out2 = live2.forward_pass(out1);
+    auto up1 = live.backward_pass(out2);
+    auto up2 = live2.backward_pass(up1);
+    for(auto& height : up2) {
         for(auto& width : height) {
             for(auto& depth : width) {
                 std::cout << depth << ' ';
@@ -177,31 +182,76 @@ int main(void) {
         }
         std::cout << '\n';
     }
-
-
-    // NEED TO USE POINTERS FOR THIS STUFF :(
-    /*vector<Layer<>*> stuff {
-        &d1,
-        &r1
-    };*/
-    //auto poo = (*net[0])(input);
-
-/*
-    auto poo = net.predict(input);
-    print(poo);
-
-    Net<> net;
-    net.predict(input);
 */
-  //net[0](input);
+    auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
+        (   // mnist data location.
+            "/home/afeeney/pet/net/mnist_data/mnist/" 
+        );
 
-    //print(net[0]);
-    /*
-    Layer<> poo = net[0];
-    auto val = poo(input);
-    print(val);
-    */
+    Net<double> simp_mnist_net({
+        "dense 100 784",
+        "relu",
+        "dense 100 100",
+        "relu",
+        "dense 50 100",
+        "relu",
+        "dense 50 50",
+        "relu",
+        "dense 50 50",
+        "relu",
+        "dense 10 50"
+    });
+    // train the network. 
+    unsigned int num_epochs = 6;
+
+    for(unsigned int epoch = 0; epoch < num_epochs; ++epoch) {
+        for(int o = 0; o < mnist_dataset.training_labels.size(); ++o) {
+            auto image = mnist_dataset.training_images[o];
+            auto label = mnist_dataset.training_labels[o];
+
+            vector<double> image_d(image.begin(), image.end());
+            vector<double> one_hot_label(10, 0); 
+            one_hot_label[label] = 1;
+        
+            vector<vector<double>> matr_im(1, vector<double>(image_d.size(),
+                                                             0));
+            for(int d = 0; d < image_d.size(); ++d) {
+                matr_im[0][d] = image_d[d];
+            }
+            vector<vector<double>> matr_lb(1);
+            matr_lb[0] = one_hot_label;
+
+            simp_mnist_net.update(matr_im, matr_lb);
+        }
+    }
+    
+    int correct = 0;
+    
+    for(int o = 0; o < mnist_dataset.test_labels.size(); ++o) {
+        auto image = mnist_dataset.test_images[o];
+        auto label = mnist_dataset.test_labels[o];
+
+        vector<double> image_d(image.begin(), image.end());
+        vector<double> one_hot_label(10, 0); 
+        one_hot_label[label] = 1;
+    
+        vector<vector<double>> matr_im(1, vector<double>(image_d.size(),
+                                                         0));
+        for(int d = 0; d < image_d.size(); ++d) {
+            matr_im[0][d] = image_d[d];
+        }
+        vector<vector<double>> matr_lb(1);
+        matr_lb[0] = one_hot_label;
 
 
+        if(simp_mnist_net.guess_and_check(matr_im, matr_lb)) {
+            ++correct;
+        }
+
+    }
+    double percent_correct = static_cast<double>(correct) / 
+                          static_cast<double>(
+                                    mnist_dataset.test_labels.size());
+    std::cout << "accuracy: " << percent_correct << '\n'; 
     return 0;
 }

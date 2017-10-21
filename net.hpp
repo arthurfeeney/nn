@@ -28,8 +28,6 @@ private:
     std::vector<std::unique_ptr<Layer_2D<Weight>>> layers;
     std::vector<std::unique_ptr<Layer_3D<Weight>>> layers_3d;
 
-    // stores which layer whether layer is 2d or 3d.
-    std::map<int, int> layer_ordering; // layer -> (2, 3)
 
     Loss_Cross_Entropy<Weight> loss;
 
@@ -38,8 +36,10 @@ public:
 
     Net(const std::initializer_list<std::string>& input)
         {
-            int layer = 0;
+            int tmp = 0;
             for(auto iter = input.begin(); iter != input.end(); ++iter) {
+                std::cout << tmp;
+                ++tmp;
                 std::string layer_string = *iter;
                 std::vector<std::string> split_layer_string;
                 boost::split(split_layer_string, layer_string,
@@ -58,13 +58,11 @@ public:
                             new Dense<Weight>(std::stoi(split_layer_string[1]),
                                               std::stoi(split_layer_string[2]))
                         ));
-                    layer_ordering[layer] = 2;
                 }
                 // construct relu!
                 else if(split_layer_string[0] == "relu") {
                     layers.push_back(
                         std::unique_ptr<Layer_2D<Weight>>(new Relu<Weight>()));
-                    layer_ordering[layer] = 2;
                 }
                 // construct the conv2d layer. Pretty gross, but w/e
                  else if(split_layer_string[0] == "conv2d") {
@@ -78,14 +76,11 @@ public:
                                 std::stoi(split_layer_string[5]),
                                 std::stoi(split_layer_string[6]),
                                 std::stoi(split_layer_string[7]))));
-                    layer_ordering[layer] = 3;
                 }
             }
-            ++layer;
         }
 
-    template<typename S>
-    void update(const S& input, const S& label) {
+    void update(const Matrix& input, const Matrix& label) {
         Matrix&& prediction = predict(input);
         Matrix&& dloss = loss.comp_d_loss(prediction, label);
         Matrix& d_out = dloss;
@@ -95,16 +90,24 @@ public:
     }
 
     Matrix predict(Matrix input) {
-        if(layers_3d.size() == 0) {
-            Matrix& trans = input;
-            for(const auto& layer : layers) {
-                trans = layer->forward_pass(trans);
-            }
-            return trans;
+        Matrix& trans = input;
+        for(const auto& layer : layers) {
+            trans = layer->forward_pass(trans);
         }
-        else return Matrix();
+        return trans;
     }
 
+    // returns true if guess was correct, else false.
+    bool guess_and_check(Matrix input, Matrix label) {
+        Matrix guess = predict(input);
+        auto guess_iter = std::max_element(guess[0].begin(), guess[0].end());
+        int guess_index = guess_iter - guess[0].begin();
+        int label_index = 0;
+        for( ; label[0][label_index] != 1; ++label_index) { }
+
+        return guess_index == label_index;
+    }
+    /*
     // resizing for convolutions needs to be done here. 
     Image predict(Image input) {
         Image& trans_image = input;
@@ -113,7 +116,7 @@ public:
             column_trans = layer->forward_pass(column_trans);
             //trans_iamge = mat_aux::reshape(column_trans)
         }
-    }
+    }*/
 };
 
 
