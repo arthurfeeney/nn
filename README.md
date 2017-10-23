@@ -1,8 +1,12 @@
 # nn
-implementation of a neural network. Trying to make it somewhat flexible so it works like a framework.
+A simple framework(-ish) for making a neural network.
 
-Can be used to make network. Only supports the normal dense/fully connected layer and relu right now. 
+Main has a test that just uses mnist. Gets about 96% accuracy with a kind of simple randomly chosen network. 
 
-need to add support for more types of layers -> convolution, dropout, maybe batch normalization. 
-
-Main has a really simple test right now that just tells if an input number is positive or negative. 
+Todo:
+    - implement ensemble of nets.
+    - save and load trained network. 
+    - test (and probably fix) conv2d. 
+    - parallelize stuff.
+    - batch normalization (maybe, I think this is hard to do...)
+    - Adam optimizer.

@@ -188,15 +188,15 @@ int main(void) {
         );
 
     Net<double> simp_mnist_net(
-    1e-3,        
+    1e-4,        
     {
-        "dense 100 784",
+        "dense 200 784",
+        "relu",
+        "dense 100 200",
+        "relu",
+        "dense 100 100",
         "relu",
         "dense 50 100",
-        "relu",
-        "dense 50 50",
-        "relu",
-        "dense 50 50",
         "relu",
         "dense 50 50",
         "relu",
@@ -204,10 +204,13 @@ int main(void) {
         "dense 10 50"
     });
     // train the network. 
-    unsigned int num_epochs = 1;
+    unsigned int num_epochs = 10;
 
     for(unsigned int epoch = 0; epoch < num_epochs; ++epoch) {
         for(size_t o = 0; o < mnist_dataset.training_labels.size(); ++o) {
+            if(o % 10000 == 0) {
+                std::cout << "epoch: " << epoch << " step: " << o << '\n';
+            }
             auto image = mnist_dataset.training_images[o];
             auto label = mnist_dataset.training_labels[o];
 
