@@ -3,9 +3,9 @@
 #include <memory>
 #include <utility>
 
-#include "aux.hpp"
-#include "layers.hpp"
-#include "net.hpp"
+#include "include/aux.hpp"
+#include "include/layers.hpp"
+#include "include/net.hpp"
 #include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
 
 
@@ -47,7 +47,6 @@ pair<vector<Matrix>, vector<Matrix>> generate_data(int size) {
 
 
 int main(void) {
-    std::cout << "love";
     vector<vector<double>> input{{3,2,1,4,5}};
     vector<vector<double>> actual{{0,0,1,0,0}};
 /*
@@ -188,10 +187,10 @@ int main(void) {
             "/home/afeeney/pet/net/mnist_data/mnist/" 
         );
 
-    Net<double> simp_mnist_net({
+    Net<double> simp_mnist_net(
+    1e-3,        
+    {
         "dense 100 784",
-        "relu",
-        "dense 100 100",
         "relu",
         "dense 50 100",
         "relu",
@@ -199,13 +198,16 @@ int main(void) {
         "relu",
         "dense 50 50",
         "relu",
+        "dense 50 50",
+        "relu",
+        "dropout .5", // dropout should actual hurt accuracy a bit since network is so small.
         "dense 10 50"
     });
     // train the network. 
-    unsigned int num_epochs = 6;
+    unsigned int num_epochs = 1;
 
     for(unsigned int epoch = 0; epoch < num_epochs; ++epoch) {
-        for(int o = 0; o < mnist_dataset.training_labels.size(); ++o) {
+        for(size_t o = 0; o < mnist_dataset.training_labels.size(); ++o) {
             auto image = mnist_dataset.training_images[o];
             auto label = mnist_dataset.training_labels[o];
 
@@ -235,8 +237,7 @@ int main(void) {
         vector<double> one_hot_label(10, 0); 
         one_hot_label[label] = 1;
     
-        vector<vector<double>> matr_im(1, vector<double>(image_d.size(),
-                                                         0));
+        vector<vector<double>> matr_im(1, vector<double>(image_d.size(), 0));
         for(int d = 0; d < image_d.size(); ++d) {
             matr_im[0][d] = image_d[d];
         }

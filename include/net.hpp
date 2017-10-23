@@ -34,11 +34,10 @@ private:
 public:
     Net():loss() {}
 
-    Net(const std::initializer_list<std::string>& input)
+    Net(double learning_rate, const std::initializer_list<std::string>& input)
         {
             int tmp = 0;
             for(auto iter = input.begin(); iter != input.end(); ++iter) {
-                std::cout << tmp;
                 ++tmp;
                 std::string layer_string = *iter;
                 std::vector<std::string> split_layer_string;
@@ -56,7 +55,8 @@ public:
                     layers.push_back(
                         std::unique_ptr<Layer_2D<Weight>>(
                             new Dense<Weight>(std::stoi(split_layer_string[1]),
-                                              std::stoi(split_layer_string[2]))
+                                              std::stoi(split_layer_string[2]),
+                                              learning_rate)
                         ));
                 }
                 // construct relu!
@@ -65,7 +65,7 @@ public:
                         std::unique_ptr<Layer_2D<Weight>>(new Relu<Weight>()));
                 }
                 // construct the conv2d layer. Pretty gross, but w/e
-                 else if(split_layer_string[0] == "conv2d") {
+                else if(split_layer_string[0] == "conv2d") {
                     layers_3d.push_back(
                         std::unique_ptr<Layer_3D<Weight>>(
                             new Conv2d<Weight>(
@@ -75,13 +75,21 @@ public:
                                 std::stoi(split_layer_string[4]),
                                 std::stoi(split_layer_string[5]),
                                 std::stoi(split_layer_string[6]),
-                                std::stoi(split_layer_string[7]))));
+                                std::stoi(split_layer_string[7]),
+                                learning_rate)));
+                }
+                else if(split_layer_string[0] == "dropout") {
+                    layers.push_back(
+                        std::unique_ptr<Layer_2D<Weight>>(
+                            new Dropout2d<Weight>(
+                                std::stod(split_layer_string[1], nullptr)
+                            )));
                 }
             }
         }
 
     void update(const Matrix& input, const Matrix& label) {
-        Matrix&& prediction = predict(input);
+        Matrix&& prediction = predict(input, true);
         Matrix&& dloss = loss.comp_d_loss(prediction, label);
         Matrix& d_out = dloss;
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
@@ -89,9 +97,10 @@ public:
         }
     }
 
-    Matrix predict(Matrix input) {
+    Matrix predict(Matrix input, bool training) {
         Matrix& trans = input;
         for(const auto& layer : layers) {
+            layer->set_phase(training);
             trans = layer->forward_pass(trans);
         }
         return trans;
@@ -99,7 +108,7 @@ public:
 
     // returns true if guess was correct, else false.
     bool guess_and_check(Matrix input, Matrix label) {
-        Matrix guess = predict(input);
+        Matrix guess = predict(input, false);
         auto guess_iter = std::max_element(guess[0].begin(), guess[0].end());
         int guess_index = guess_iter - guess[0].begin();
         int label_index = 0;

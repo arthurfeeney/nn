@@ -23,8 +23,8 @@ struct Dense : public Layer_2D<Weight> {
 
     Dense():Layer_2D<Weight>("dense") {}
     // constructor sets size and default values of weights.
-    Dense(int num_nodes, int input_size):
-        Layer_2D<Weight>(num_nodes, input_size, "dense")
+    Dense(int num_nodes, int input_size, double learning_rate):
+        Layer_2D<Weight>(num_nodes, input_size, "dense", learning_rate)
     {
         for(auto& row : this->weights) {
             for(auto& item : row) {
@@ -67,11 +67,10 @@ struct Dense : public Layer_2D<Weight> {
         * finds gradients for weights, bias, and input to feed to next
         *  layer.
         */
-        double step_size = 1e-3; // learning rate
         auto d_weights = aux::matmul(aux::transpose(this->last_input),
                                      d_out);
 
-        std::vector<double> d_bias(d_out.size());
+        std::vector<Weight> d_bias(d_out.size());
         for(size_t row = 0; row < d_out.size(); ++row) {
             d_bias[row] = std::accumulate(d_out[row].begin(),
                                           d_out[row].end(), 0.0);
@@ -81,13 +80,14 @@ struct Dense : public Layer_2D<Weight> {
 
         for(size_t row = 0; row < this->weights.size(); ++row) {
             for(size_t col = 0; col < this->weights[0].size(); ++col) {
-                this->weights[row][col] += -step_size * d_weights[row][col];
+                this->weights[row][col] += -this->step_size *
+                                            d_weights[row][col];
             }
         }
 
         // bias is a matrix, d_bias is a vector (just cuz im dumb.)
         for(size_t row = 0; row < this->bias.size(); ++row) {
-            this->bias[row][0] += -step_size * d_bias[row];
+            this->bias[row][0] += -this->step_size * d_bias[row];
         }
 
         return d_input; // used for next layer.

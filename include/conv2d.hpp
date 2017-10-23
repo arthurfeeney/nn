@@ -26,9 +26,9 @@ public:
 
     Conv2d(size_t num_filters, size_t filter_size, size_t stride,
            size_t input_height, size_t input_width, size_t input_depth,
-           size_t padding):
+           size_t padding, double learning_rate):
             Layer_3D<Weight>("conv2d", input_height, input_width, 
-                             input_depth), 
+                             input_depth, learning_rate), 
             filters(num_filters, 
                     Image(filter_size, 
                           Matrix(filter_size, 
@@ -109,7 +109,7 @@ public:
 
         Image image_output(output_depth, 
                            Matrix(output_height, 
-                                  std::vector<double>(output_width, 0)));
+                                  std::vector<Weight>(output_width, 0)));
 
         size_t out_depth = 0;
         for(const auto& filter : filters) {
@@ -177,9 +177,6 @@ public:
     // BREAK THIS UP INTO MORE FUNCTIONS. 
     Image backward_pass(const Image& d_out) {
         // need to account for padding.
-
-
-        double step_size = 1e-4;
         /*
          * need to compute:
          * dx - gradient with respect to input.
@@ -244,7 +241,8 @@ public:
                 for(size_t width = 0; width < filter_size; ++width) {
                     for(size_t depth = 0; depth < this->input_depth; ++depth) {
                         filters[filter][height][width][depth] += 
-                            step_size * d_filters[filter][height][width][depth];
+                            this->step_size *
+                            d_filters[filter][height][width][depth];
                     }
                 }
             }

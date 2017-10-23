@@ -27,18 +27,24 @@ protected:
 
     std::string layer_type;
 
+    bool is_training = true;
+
+    double step_size = 1e-3;
+
 public:
     Layer_2D(std::string layer_type): layer_type(layer_type) {}
 
     // layer sets sizes of stuff and the name of the layer.
-    Layer_2D(size_t num_nodes, size_t input_size, std::string layer_type):
+    Layer_2D(size_t num_nodes, size_t input_size, std::string layer_type,
+             double learning_rate):
         // set weights to random values. KxN
         weights(input_size, std::vector<Weight>(num_nodes, 0)),
         // bias initially zero. 1xN
         bias(1, std::vector<Weight>(num_nodes, 0)),
         size(num_nodes),
         input_size(input_size),
-        layer_type(layer_type)
+        layer_type(layer_type),
+        step_size(learning_rate)
     {}
 
     ~Layer_2D() = default;
@@ -49,7 +55,9 @@ public:
         size(other.size),
         input_size(other.input_size),
         last_input(other.last_input),
-        last_output(other.last_output) {
+        last_output(other.last_output), 
+        is_training(other.is_training)
+    {
         other.size = 0;
         other.input_size = 0;
     }
@@ -62,6 +70,7 @@ public:
             last_input = other.last_input;
             last_output = other.last_output;
             input_size = other.input_size;
+            is_training = other.is_training;
         }
         return *this;
     }
@@ -72,13 +81,27 @@ public:
         size(other.size),
         input_size(other.input_size),
         last_input(other.last_input),
-        last_output(other.last_output) {}
+        last_output(other.last_output), 
+        is_training(other.is_training)
+    {}
 
     virtual Matrix forward_pass(const Matrix& input) = 0;
 
     virtual Matrix backward_pass(const Matrix& input) = 0;
 
     virtual Matrix operator()(const Matrix& input) = 0;
+
+    void change_phase() {
+        is_training = !is_training;
+    }
+
+    bool current_phase() {
+        return is_training;
+    }
+
+    void set_phase(bool training) {
+        is_training = training;
+    }
 
     Matrix get_weights() const {
         return weights;
@@ -97,7 +120,7 @@ struct Loss_Cross_Entropy {
 
     Loss_Cross_Entropy() {}
 
-    double comp_loss(const Matrix& scores, const Matrix& actual) {
+    Weight comp_loss(const Matrix& scores, const Matrix& actual) {
         return loss(scores, actual).second;
     }
 
