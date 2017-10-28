@@ -3,6 +3,7 @@
 #include <utility>
 #include <string>
 #include <tuple>
+#include <memory>
 
 #include "aux.hpp"
 #include "layers.hpp"
@@ -20,6 +21,10 @@ struct Relu : public Layer_2D<Weight> {
     Relu(Relu&& other):Layer_2D<Weight>(std::move(other)) {}
 
     Relu(const Relu& other): Layer_2D<Weight>(other) {}
+
+    Relu* clone() {
+        return new Relu(*this);
+    }
 
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;

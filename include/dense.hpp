@@ -4,6 +4,7 @@
 #include <utility>
 #include <string>
 #include <tuple>
+#include <memory>
 
 #include "aux.hpp"
 #include "layers.hpp"
@@ -38,6 +39,10 @@ struct Dense : public Layer_2D<Weight> {
     Dense(Dense&& other): Layer_2D<Weight>(std::move(other)) {}
 
     Dense(const Dense& other): Layer_2D<Weight>(other) {}
+
+    Dense* clone() {
+        return new Dense(*this);
+    }
 
     Matrix forward_pass(const Matrix& input) {
         // computes output of a layer based on input and its weights.

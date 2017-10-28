@@ -91,6 +91,8 @@ public:
 
     virtual Matrix operator()(const Matrix& input) = 0;
 
+    virtual Layer_2D* clone() = 0;
+
     void change_phase() {
         is_training = !is_training;
     }

@@ -28,11 +28,37 @@ private:
     std::vector<std::unique_ptr<Layer_2D<Weight>>> layers;
     std::vector<std::unique_ptr<Layer_3D<Weight>>> layers_3d;
 
-
     Loss_Cross_Entropy<Weight> loss;
 
 public:
     Net():loss() {}
+
+    Net(Net&& other):
+        layers(std::move(other.layers)),
+        layers_3d(std::move(other.layers_3d)),
+        loss(std::move(other.loss))
+    {}
+
+    Net& operator=(Net&& other) {
+        if(this != &other) {
+            layers = std::move(other.layers);
+            layers_3d = std::move(other.layers_3d);
+            loss = std::move(other.loss);
+        }
+        return *this;
+    }
+
+    // WILL NEED TO UPDATE FOR 3D layers.
+    Net(const Net& other):
+        layers(),
+        layers_3d(other.layers_3d.size()),
+        loss(other.loss)
+    {
+        for(auto& layer_ptr : other.layers) {
+            std::unique_ptr<Layer_2D<Weight>> layer_ptr_clone(layer_ptr->clone());
+            layers.push_back(std::move(layer_ptr_clone));
+        }
+    }
 
     Net(double learning_rate, const std::initializer_list<std::string>& input)
         {

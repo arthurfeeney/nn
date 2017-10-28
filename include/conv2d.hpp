@@ -3,6 +3,7 @@
 #include <utility>
 #include <string>
 #include <tuple>
+#include <memory>
 
 #include "aux.hpp"
 #include "layer_3d.hpp"
@@ -81,6 +82,10 @@ public:
         stride(other.stride),
         padding(other.padding) 
     {}
+
+    Conv2d* clone() {
+        return new Conv2d(*this);
+    }
 
     // highest quality code!
     // filters are height*width*depth. Images are depth*height*width. -____- im dumb.

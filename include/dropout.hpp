@@ -2,6 +2,8 @@
 #include <string>
 #include <random>
 #include <algorithm>
+#include <utility>
+#include <memory>
 
 #include "layers.hpp"
 #include "aux.hpp"
@@ -22,6 +24,20 @@ public:
         Layer_2D<Weight>("dense"),
         keep_prob(keep_prob)
     {} 
+
+    Dropout2d(Dropout2d&& other):
+        Layer_2D<Weight>(std::move(other)),
+        keep_prob(std::move(other.keep_prob))
+    {}
+
+    Dropout2d(const Dropout2d& other):
+        Layer_2D<Weight>(other),
+        keep_prob(other.keep_prob)
+    {}
+
+    Dropout2d* clone() {
+        return new Dropout2d(*this);
+    }
 
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;
