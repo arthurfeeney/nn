@@ -6,6 +6,7 @@
 #include "include/aux.hpp"
 #include "include/layers.hpp"
 #include "include/net.hpp"
+#include "include/ensemble.hpp"
 #include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
 
 
@@ -17,7 +18,7 @@ using std::make_pair;
 using Matrix = vector<vector<double>>;
 using Image = vector<Matrix>;
 
-void print(vector<vector<double>>& m) {
+void print(Matrix& m) {
     for(auto& row : m) {
         for(auto& item : row) {
             std::cout << item << ' ';
@@ -44,9 +45,46 @@ pair<vector<Matrix>, vector<Matrix>> generate_data(int size) {
     return make_pair(random_data, labels);
 }
 
+template<typename T>
+vector<vector<double>> conv_mnist_data(const T& datum) {
+    auto image = datum;
+    vector<double> image_d(image.begin(), image.end());
+    vector<vector<double>> matr_im(1, vector<double>(image_d.size(), 0));
+    for(int d = 0; d < image_d.size(); ++d) {
+        matr_im[0][d] = image_d[d];
+    }
+    return matr_im;
+}
 
+template<typename T>
+vector<vector<double>> conv_mnist_label(const T& l) {
+    auto label = l;
+    vector<double> one_hot_label(10, 0);
+    one_hot_label[label] = 1;
+    vector<vector<double>> matr_lb(1);
+    matr_lb[0] = one_hot_label;
+    return matr_lb;
+}
 
-int main(void) {
+template<typename T>
+vector<vector<vector<double>>> get_all_data(const T& data) {
+    vector<vector<vector<double>>> ret(data.size());
+    for(int d = 0; d < data.size(); ++d) {
+        ret[d] = conv_mnist_data(data[d]);
+    }
+    return ret;
+}
+
+template<typename T>
+vector<vector<vector<double>>> get_all_label(const T& labels) {
+    vector<vector<vector<double>>> ret(labels.size());
+    for(int d = 0; d < labels.size(); ++d) {
+        ret[d] = conv_mnist_label(labels[d]);
+    }
+    return ret;
+}
+
+int main(int argc, char** argv) {
     vector<vector<double>> input{{3,2,1,4,5}};
     vector<vector<double>> actual{{0,0,1,0,0}};
 /*
@@ -182,17 +220,20 @@ int main(void) {
         std::cout << '\n';
     }
 */
+
+
     auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
         (   // mnist data location.
             "/home/afeeney/pet/net/mnist_data/mnist/" 
         );
 
+/*
     Net<double> simp_mnist_net(
-    1e-4,        
+    1e-3,        
     {
-        "dense 200 784",
+        "dense 100 784",
         "relu",
-        "dense 100 200",
+        "dense 100 100",
         "relu",
         "dense 100 100",
         "relu",
@@ -200,11 +241,11 @@ int main(void) {
         "relu",
         "dense 50 50",
         "relu",
-        "dropout .5", // dropout should actual hurt accuracy a bit since network is so small.
+        "dropout .5", // dropout should hurt accuracy a bit since network is so small.
         "dense 10 50"
     });
     // train the network. 
-    unsigned int num_epochs = 10;
+    unsigned int num_epochs = 1;
 
     for(unsigned int epoch = 0; epoch < num_epochs; ++epoch) {
         for(size_t o = 0; o < mnist_dataset.training_labels.size(); ++o) {
@@ -257,5 +298,36 @@ int main(void) {
                           static_cast<double>(
                                     mnist_dataset.test_labels.size());
     std::cout << "accuracy: " << percent_correct << '\n'; 
+  */
+
+    //decltype(mnist_dataset.training_images)
+    //decltype(mnist_dataset.training_labels), 
+
+    Ensemble<vector<vector<vector<double>>>, 
+             vector<vector<vector<double>>>,
+             double> love(
+            get_all_data(mnist_dataset.training_images),
+            get_all_label(mnist_dataset.training_labels),
+            get_all_data(mnist_dataset.test_images),
+            get_all_label(mnist_dataset.test_labels),
+            1, // ensemble size 
+            1e-3, // learning rate
+            32, // batch size.
+            {
+                "dense 100 784",
+                "relu",
+                "dense 100 100",
+                "relu",
+                "dense 100 100",
+                "relu",
+                "dense 50 100",
+                "relu",
+                "dense 50 50",
+                "relu",
+                "dropout .5", 
+                "dense 10 50"
+            }); // network
+    love.train(2, true, 1000);
+    std::cout << love.test();
     return 0;
 }
