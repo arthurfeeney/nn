@@ -48,6 +48,18 @@ public:
         return *this;
     }
 
+    Net& operator=(const Net& other) {
+        loss = other.loss;
+        layers.resize(other.layers.size());
+        int index = 0;
+        for(auto& layer_ptr : other.layers) {
+            std::unique_ptr<Layer_2D<Weight>> layer_ptr_clone(layer_ptr->clone());
+            layers[index] = std::move(layer_ptr_clone);
+            ++index;
+        }
+        return *this;
+    }
+
     // WILL NEED TO UPDATE FOR 3D layers.
     Net(const Net& other):
         layers(),
@@ -123,6 +135,37 @@ public:
         }
     }
 
+    void batch_update(const std::vector<Matrix>& inputs, 
+                      const std::vector<Matrix>& labels) 
+    {
+        const size_t batch_size = inputs.size();
+        std::vector<Matrix> predictions(batch_size);
+        for(int i = 0; i < batch_size; ++i) {
+            predictions[i] = predict(inputs[i], true);
+        }
+        std::vector<Matrix> losses(batch_size);
+        for(int i = 0; i < inputs.size(); ++i) {
+            losses[i] = loss.comp_d_loss(predictions[i], labels[i]);
+        }
+
+        
+        Matrix d_out = losses[0];
+        for(int i = 1; i < losses.size(); ++i) {
+            d_out = aux::matadd(losses[0], losses[i]);
+        }
+
+        for(auto& row : d_out) {
+            for(auto& item : row) {
+                item /= batch_size;
+            }
+        }
+
+        for(int layer = layers.size() - 1; layer >= 0; --layer) {
+            d_out = layers[layer]->backward_pass(d_out);
+        }
+
+    }
+
     Matrix predict(Matrix input, bool training) {
         Matrix& trans = input;
         for(const auto& layer : layers) {
@@ -142,16 +185,20 @@ public:
 
         return guess_index == label_index;
     }
-    /*
-    // resizing for convolutions needs to be done here. 
-    Image predict(Image input) {
-        Image& trans_image = input;
-        for(const auto& layer : layers) {
-            Matrix&& column_trans = mat_aux::image_to_col(trans_image);
-            column_trans = layer->forward_pass(column_trans);
-            //trans_iamge = mat_aux::reshape(column_trans)
+    
+    Net<Weight>& operator+=(const Net<Weight>& other) {
+        for(int layer = 0; layer < layers.size(); ++layer) {
+            *(layers[layer]) += *(other.layers[layer]);
         }
-    }*/
+        return *this;
+    }
+
+    Net<Weight>& operator/=(const size_t count) {
+        for(int layer = 0; layer < layers.size(); ++layer) {
+            *(layers[layer]) /= count;
+        }  
+        return *this;
+    }
 };
 
 

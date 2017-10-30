@@ -57,22 +57,20 @@ public:
                 shuffle_data();
             }
             for(size_t step = 0; step < train_labels.size(); step += batch_size) {
-                if(step % verbosity == 0) {
+                if(verbose && step % verbosity == 0) {
                     std::cout << "epoch: " << epoch << ", step: " << step << '\n';
                 }
 
                 std::pair<DataCont, LabelCont> batch_pair = get_batch(); 
                 auto each_net_chunk = chunk_batch(batch_pair); 
-            
+             
                 for(size_t net = 0; net < ensemble_size; ++net) {
                     DataCont chunk_data = each_net_chunk[net].first;
                     LabelCont chunk_labels = each_net_chunk[net].second;
-                    for(size_t datum = 0; datum < chunk_labels.size(); ++datum) {
-                        ensemble[net].update(chunk_data[datum],
-                                             chunk_labels[datum]);
-                    }
+                    ensemble[net].batch_update(chunk_data, chunk_labels);
                 }
             }
+            average_ensemble();
         }
     }
 
@@ -155,18 +153,14 @@ private:
     }
 
     void average_ensemble() {
-        /*
-         * ensemble[0] = sum(ensemble) / ensemble_size
-         * for i in 1 until ensemble_size:
-         *  ensemble[i] = ensemble[0]
-         *  so ez lmao
-         */
+        for(int net = 1; net < ensemble_size; ++net) {
+            ensemble[0] += ensemble[net];
+        }
+        ensemble[0] /= ensemble_size;
+        for(int net = 1; net < ensemble_size; ++net) {
+            ensemble[net] = ensemble[0];
+        }
     }
-
-    void init_ensemble() {
-         
-    }
-
 
 };
 

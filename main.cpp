@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
             get_all_label(mnist_dataset.training_labels),
             get_all_data(mnist_dataset.test_images),
             get_all_label(mnist_dataset.test_labels),
-            1, // ensemble size 
+            4, // ensemble size 
             1e-3, // learning rate
             32, // batch size.
             {
@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
                 "dropout .5", 
                 "dense 10 50"
             }); // network
-    love.train(2, true, 1000);
+    love.train(10);
     std::cout << love.test();
     return 0;
 }

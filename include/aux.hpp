@@ -87,8 +87,14 @@ namespace aux {
         return prod;
     }
 
+    std::vector<std::vector<double>> empty_matrix(size_t height, size_t width) {
+        return std::vector<std::vector<double>>(height, 
+                                                std::vector<double>(width, 0));
+    }
+
     template<typename Matrix>
-    auto matadd(const Matrix& m1, const Matrix& m2) -> Matrix {
+    auto matadd(const Matrix& m1, const Matrix& m2) -> Matrix
+    {
         if(m1.size() != m2.size() || m1[0].size() != m2[0].size()) {
             throw("matrix dimension not equal.");
         }

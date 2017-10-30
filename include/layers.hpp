@@ -31,6 +31,8 @@ protected:
 
     double step_size = 1e-3;
 
+    bool weighted = false;
+
 public:
     Layer_2D(std::string layer_type): layer_type(layer_type) {}
 
@@ -44,7 +46,8 @@ public:
         size(num_nodes),
         input_size(input_size),
         layer_type(layer_type),
-        step_size(learning_rate)
+        step_size(learning_rate),
+        weighted(true)
     {}
 
     ~Layer_2D() = default;
@@ -56,7 +59,8 @@ public:
         input_size(other.input_size),
         last_input(other.last_input),
         last_output(other.last_output), 
-        is_training(other.is_training)
+        is_training(other.is_training),
+        weighted(other.weighted)
     {
         other.size = 0;
         other.input_size = 0;
@@ -71,6 +75,7 @@ public:
             last_output = other.last_output;
             input_size = other.input_size;
             is_training = other.is_training;
+            weighted = other.weighted;
         }
         return *this;
     }
@@ -82,7 +87,8 @@ public:
         input_size(other.input_size),
         last_input(other.last_input),
         last_output(other.last_output), 
-        is_training(other.is_training)
+        is_training(other.is_training),
+        weighted(other.weighted)
     {}
 
     virtual Matrix forward_pass(const Matrix& input) = 0;
@@ -113,6 +119,32 @@ public:
         return layer_type;
     }
 
+    Layer_2D<Weight>& operator+=(const Layer_2D<Weight>& other) {
+        if(!weighted) return *this;
+        for(size_t row = 0; row < other.weights.size(); ++row) {
+            for(size_t col = 0; col < other.weights[0].size(); ++col) {
+                weights[row][col] += other.weights[row][col];
+            }
+        }
+        for(size_t row = 0; row < other.bias[0].size(); ++row) {
+            bias[0][row] += other.bias[0][row];
+        }
+        return *this;
+    }
+
+    Layer_2D<Weight>& operator/=(const size_t count) {
+        if(!weighted) return *this;
+        for(size_t row = 0; row < weights.size(); ++row) {
+            for(size_t col = 0; col < weights[0].size(); ++col) {
+                weights[row][col] /= count;
+            }
+        }
+        for(size_t row = 0; row < bias[0].size(); ++row) {
+            bias[0][row] /= count;
+        }
+        return *this;
+         
+    }
 };
 
 template<typename Weight = double>
