@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <chrono>
 
 #include "include/aux.hpp"
 #include "include/layers.hpp"
@@ -312,22 +313,27 @@ int main(int argc, char** argv) {
             get_all_label(mnist_dataset.test_labels),
             4, // ensemble size 
             1e-3, // learning rate
-            32, // batch size.
+            128, // batch size.
             {
-                "dense 100 784",
+                "dense 300 784",
                 "relu",
-                "dense 100 100",
-                "relu",
+                //"dense 300 784",
+                //"relu",
+                "dense 10 300"
+                /*"relu",
                 "dense 100 100",
                 "relu",
                 "dense 50 100",
                 "relu",
-                "dense 50 50",
-                "relu",
-                "dropout .5", 
-                "dense 10 50"
+                //"dropout .5", 
+                "dense 10 50"*/
             }); // network
-    love.train(10);
-    std::cout << love.test();
+    
+    auto start = std::chrono::system_clock::now();
+    love.train(4, true, 10000);
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "time: " << elapsed_seconds.count() << '\n';
+    std::cout << love.test() << '\n';
     return 0;
 }
