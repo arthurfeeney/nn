@@ -53,7 +53,7 @@ public:
 
     Conv2d(Conv2d&& other):
         Layer_3D<Weight>(other.layer_type, other.input_height, 
-                         other.input_width, other.input_depth),
+                         other.input_width, other.input_depth, other.step_size),
         filters(other.filters),
         filter_size(other.filter_size),
         stride(other.stride),
@@ -76,7 +76,7 @@ public:
 
     Conv2d(const Conv2d& other):
         Layer_3D<Weight>(other.layer_type, other.input_height, 
-                         other.input_width, other.input_depth),
+                         other.input_width, other.input_depth, other.step_size),
         filters(other.filters),
         filter_size(other.filter_size),
         stride(other.stride),
@@ -91,15 +91,15 @@ public:
     // filters are height*width*depth. Images are depth*height*width. -____- im dumb.
     Image forward_pass(const Image& input) {
         this->last_input = input;
-        
+ 
         if(padding > 0) {
             // pad last_input;
             Image tmp(this->input_depth, 
                       Matrix(this->input_height + 2*padding, 
                              std::vector<Weight>(this->input_width + 2*padding, 0)));
             for(int d = 0; d < this->input_depth; ++d) {
-                for(int h = padding; h < this->input_height + padding; ++h) {
-                    for(int w = padding; w < this->input_width + padding; ++w) {
+                for(int h = padding; h < this->input_height; ++h) {
+                    for(int w = padding; w < this->input_width; ++w) {
                         tmp[d][h][w] = this->last_input[d][h-padding][w-padding];
                     }
                 }
@@ -115,18 +115,20 @@ public:
         Image image_output(output_depth, 
                            Matrix(output_height, 
                                   std::vector<Weight>(output_width, 0)));
-
-        size_t out_depth = 0;
-        for(const auto& filter : filters) {
+        
+        for(int out_depth = 0; out_depth < filters.size(); ++out_depth) {
+            auto& filter = filters[out_depth];
             for(int depth = 0; depth < this->input_depth; ++depth) {
                 // matrix of filter_size slice at depth..
                 Matrix filter_at_depth(filter_size, 
                                        std::vector<Weight>(filter_size));
+                 
                 for(size_t row = 0; row < filter_size; ++row) {
                     for(size_t col = 0; col < filter_size; ++col) {
                         filter_at_depth[row][col] = filter[row][col][depth];
                     }
                 }
+                
                 // mult filter across image.
                 for(size_t row_front = 0, out_row = 0; 
                     row_front < this->last_input[0].size() - filter_size + 1; 
@@ -135,6 +137,13 @@ public:
                         col_front < this->last_input[0][0].size() - filter_size + 1; 
                         col_front += stride, ++out_col) 
                     {
+                        if(out_row == output_width) {
+                            std::cout << "out_col too big" << '\n';
+                        }
+                        if(out_col == output_height) {
+                            std::cout << "out_row too big" << '\n';
+                        }
+                         
                         // get window/splice of input image.
                         Matrix image_splice(filter_size,
                                             std::vector<Weight>(filter_size));
@@ -150,14 +159,16 @@ public:
                                     this->last_input[depth][row][col];
                             }
                         }
+                        
                         // build outputs from window.
                         Matrix window(filter_size, std::vector<Weight>(filter_size));
-                        for(int row = 0; row < filter_size; ++row) {
-                            for(int col = 0; col < filter_size; ++col) {
+                        for(size_t row = 0; row < filter_size; ++row) {
+                            for(size_t col = 0; col < filter_size; ++col) {
                                 window[row][col] = image_splice[row][col] * 
                                                     filter_at_depth[row][col];
                             }
                         }
+                        
                         // elem-wise sum of values computed from window.
                         Weight elem_window_sum = 0; 
                         for(const auto& row : window) {
@@ -165,11 +176,12 @@ public:
                                 elem_window_sum += value;
                             }
                         }
+                        
                         image_output[out_depth][out_row][out_col] += elem_window_sum;
+                        
                     }
                 }
-            }
-            ++out_depth;
+            } 
         }
         this->last_output = image_output;
         return image_output;
@@ -326,7 +338,7 @@ public:
     }
  
     std::tuple<int, int, int> proper_output_dim() const {
-        int depth = num_filters;
+        int depth = filters.size();
         int height = (this->input_height - filter_size + (2 * padding)) / stride + 1;
         int width = (this->input_width - filter_size + (2 * padding)) / stride + 1;
         return std::tuple<int, int, int>(height, width, depth);

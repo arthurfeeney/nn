@@ -172,8 +172,8 @@ struct Loss_Cross_Entropy {
     }
 
     Matrix comp_d_loss(const Matrix& scores, const Matrix& actual) {
-        Matrix&& probs = forward_pass(scores, actual);
-        Matrix&& d_loss = backward_pass(probs, actual);
+        Matrix probs = forward_pass(scores, actual);
+        Matrix d_loss = backward_pass(probs, actual);
         return d_loss;
     }
 };

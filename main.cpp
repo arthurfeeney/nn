@@ -3,6 +3,7 @@
 #include <memory>
 #include <utility>
 #include <chrono>
+#include <type_traits>
 
 #include "include/aux.hpp"
 #include "include/layers.hpp"
@@ -84,6 +85,33 @@ vector<vector<vector<double>>> get_all_label(const T& labels) {
     }
     return ret;
 }
+
+template<typename T>
+auto flat_to_im(const T& flat, size_t height, size_t width) {
+    vector<vector<vector<double>>> im(width, vector<vector<double>>(height, 
+                                                                    vector<double>(1, 0)));
+    size_t index = 0;
+    for(auto& height : im) {
+        for(auto& width : height) {
+            for(auto& val : width) {
+                val = flat[index];
+                ++index;
+            }
+        }
+    }
+    return im;
+}
+
+template<typename T>
+auto data_to_im(const T& data, size_t height, size_t width) {
+    vector<vector<vector<vector<double>>>> images(data.size());
+
+    for(int i = 0; i < data.size(); ++i) {
+        images[i] = flat_to_im(data[i], height, width);
+    }
+    return images;
+}
+
 
 int main(int argc, char** argv) {
     vector<vector<double>> input{{3,2,1,4,5}};
@@ -225,8 +253,7 @@ int main(int argc, char** argv) {
 
     auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
         (   // mnist data location.
-            "/home/afeeney/pet/net/mnist_data/mnist/" 
-        );
+            "/home/afeeney/pet/net/mnist_data/mnist/");
 
 /*
     Net<double> simp_mnist_net(
@@ -304,8 +331,9 @@ int main(int argc, char** argv) {
     //decltype(mnist_dataset.training_images)
     //decltype(mnist_dataset.training_labels), 
 
-    Ensemble<vector<vector<vector<double>>>, 
-             vector<vector<vector<double>>>,
+    /*
+    Ensemble<vector<vector<double>>,
+             vector<vector<double>>,
              double> love(
             get_all_data(mnist_dataset.training_images),
             get_all_label(mnist_dataset.training_labels),
@@ -320,6 +348,7 @@ int main(int argc, char** argv) {
                 //"dense 300 784",
                 //"relu",
                 "dense 10 300"
+*/
                 /*"relu",
                 "dense 100 100",
                 "relu",
@@ -327,13 +356,38 @@ int main(int argc, char** argv) {
                 "relu",
                 //"dropout .5", 
                 "dense 10 50"*/
-            }); // network
+ /*           }); // network
     
     auto start = std::chrono::system_clock::now();
-    love.train(4, true, 10000);
+    love.train(1, true, 10000);
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
     std::cout << "time: " << elapsed_seconds.count() << '\n';
     std::cout << love.test() << '\n';
+*/
+    //Conv2d<double> live(4, 3, 1, 28, 28, 1, 1, 1e-3);
+    //live.forward_pass(data_to_im(mnist_dataset.training_images, 28, 28)[0]);
+    Ensemble<vector<vector<vector<double>>>, 3,
+             vector<vector<double>>, 2,
+             double> conv_net 
+    (
+        data_to_im(mnist_dataset.training_images, 28, 28),
+        get_all_label(mnist_dataset.training_labels),
+        data_to_im(mnist_dataset.test_images, 28, 28),
+        get_all_label(mnist_dataset.test_labels),
+        2,
+        1e-3,
+        32,
+        {
+            "dense 100 784",
+            "relu",
+            "dense 100 100",
+            "relu",
+            "dropout .5",
+            "dense 10 100"
+        } 
+    );
+    conv_net.train(2, true, 1000);
+    std::cout << conv_net.test();
     return 0;
 }

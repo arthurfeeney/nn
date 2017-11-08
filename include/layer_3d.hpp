@@ -52,6 +52,19 @@ public:
         return *this;
     }
 
+    Layer_3D& operator=(const Layer_3D& other) {
+        if(this != &other) {
+            input_height = other.input_height;
+            input_width = other.input_width;
+            input_depth = other.input_depth;
+            last_input = other.last_input;
+            last_output = other.last_output;
+            layer_type = other.layer_type; 
+            step_size = other.step_size;
+        }
+        return *this;
+    }
+
     Layer_3D(const Layer_3D& other):
         input_height(other.input_height),
         input_width(other.input_width),
@@ -68,8 +81,14 @@ public:
 
     virtual Image backward_pass(const Image& d_out) = 0;
 
+    virtual Layer_3D* clone() = 0;
+
     std::string type() const {
         return layer_type;
+    }
+
+    void set_phase(bool training) {
+        is_training = training;
     }
 
 protected:
@@ -83,6 +102,8 @@ protected:
     std::string layer_type;
 
     double step_size;
+
+    bool is_training = true;
 
 };
 

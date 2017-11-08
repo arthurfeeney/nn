@@ -12,7 +12,8 @@
 #define ACTIVATION_HPP
 
 template <typename Weight = double>
-struct Relu : public Layer_2D<Weight> {
+class Relu : public Layer_2D<Weight> {
+public:
     using Matrix = std::vector<std::vector<Weight>>;
     using Image = std::vector<Matrix>;
 
@@ -28,7 +29,7 @@ struct Relu : public Layer_2D<Weight> {
 
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;
-        return aux::relu(input);
+        return relu(input);
     }
 
     Matrix operator()(const Matrix& input) {
@@ -47,6 +48,29 @@ struct Relu : public Layer_2D<Weight> {
             }
         }
         return d_input;
+    }
+private:
+    Matrix relu(const Matrix& c) { 
+        Matrix relud_c(c.size(), std::vector<Weight>(c[0].size()));
+        for(int i = 0; i < c.size(); ++i) {
+            for(int j = 0; j < c[0].size(); ++j) {
+                relud_c[i][j] = std::max<double>(c[i][j], 0);
+            }
+        }
+        return relud_c;
+    }
+
+    Image relu(const Image& c) {
+        Image relud_c(c.size(), 
+                      std::vector<Weight>(c[0].size(), 
+                                          std::vector<Weight>(c[0][0].size())));
+        for(int i = 0; i < c.size(); ++i) {
+            for(int j = 0; j < c[0].size(); ++j) {
+                for(int k = 0; k < c[0][0].size(); ++k) {
+                    relud_c[i][j][k] = std::max<double>(c[i][j][k], 0);
+                }
+            }
+        }
     }
 };
 

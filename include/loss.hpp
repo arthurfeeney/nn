@@ -9,6 +9,8 @@
 #include <numeric>
 #include <iostream>
 #include <utility>
+#include <iostream>
+#include <type_traits>
 
 #include "aux.hpp"
 
@@ -40,8 +42,10 @@ static int correct_index(S label) {
     throw("1 was not found in one hot encoding.");
 }
 
-template<typename S>
-std::pair<S, double> loss(S scores, S actual) {
+using S = std::vector<std::vector<double>>;
+
+std::pair<S, double> loss(S scores, 
+                         S actual) {
     /*
     * actual is a batch of one hot encodings.
     * Whichever index contains 1, is correct.
@@ -50,11 +54,13 @@ std::pair<S, double> loss(S scores, S actual) {
     size_t num_examples = scores[0].size();
     S exp_scores = aux::exp(scores);
     std::vector<double> sums(0);
-    for(auto&& row : exp_scores) {
+    for(const auto& row : exp_scores) {
         sums.push_back(std::accumulate(row.begin(), row.end(), 0.0));
     }
 
     S probs(exp_scores);
+
+
     for(size_t row = 0; row < probs.size(); ++row) {
         for(size_t col = 0; col < probs[0].size(); ++col) {
             probs[row][col] /= sums[row];

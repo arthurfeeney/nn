@@ -6,6 +6,7 @@
 #include <functional> //contains std::ref
 #include <random>
 #include <iostream>
+#include <type_traits>
 
 #include "net.hpp"
 #include "data_manager.hpp"
@@ -14,9 +15,13 @@
 #define ENSEMBLE_HPP
 
 
-template<typename DataCont, typename LabelCont, typename Weight = double>
+template<typename In, size_t InRank, typename Out, size_t OutRank,
+         typename Weight = double>
 class Ensemble {
 public:
+    using DataCont = std::vector<In>;
+    using LabelCont = std::vector<Out>;
+
     Ensemble(DataCont train_data,
              LabelCont train_labels,
              DataCont test_data,
@@ -33,7 +38,7 @@ public:
                 test_labels,
                 batch_size,
                 ensemble_size),
-        ensemble(ensemble_size, Net<Weight>(learning_rate, input)), // SO ELEGANT UGHHGHH
+        ensemble(ensemble_size, Net<In, InRank, Out, OutRank, Weight>(learning_rate, input)),
         ensemble_size(ensemble_size), 
         conv_data(cd),
         conv_label(cl)
@@ -46,7 +51,7 @@ public:
         }
     }
 
-    Net<Weight> get_net() {
+    Net<In, InRank, Out, OutRank, Weight> get_net() {
         return ensemble[0];
     }
     
@@ -78,7 +83,7 @@ public:
     }
 
     double test() {
-        Net<Weight> test_net = get_net();
+        Net<In, InRank, Out, OutRank, Weight> test_net = get_net();
 
         auto test_pair = manager.test();
 
@@ -97,7 +102,7 @@ private:
 
     Data_Manager<DataCont, LabelCont, Weight> manager; // holds test and train data
 
-    std::vector<Net<Weight>> ensemble;
+    std::vector<Net<In, InRank, Out, OutRank, Weight>> ensemble;
     size_t ensemble_size;
     std::vector<std::vector<double>> (*conv_data)(const DataCont&);
     std::vector<std::vector<double>> (*conv_label)(const LabelCont&);
@@ -112,7 +117,7 @@ private:
         }
     }
 
-    static void process_chunk(Net<Weight>& net, 
+    static void process_chunk(Net<In, InRank, Out, OutRank, Weight>& net, 
                               std::pair<DataCont, LabelCont>& chunk) {
         DataCont chunk_data = chunk.first;
         LabelCont chunk_labels = chunk.second;
@@ -120,7 +125,7 @@ private:
     }
 
     static void run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
-                          Net<Weight>& net, size_t net_id) 
+                          Net<In, InRank, Out, OutRank, Weight>& net, size_t net_id) 
     {
         for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) {
             std::pair<DataCont, LabelCont> chunk = manager.get_chunk(net_id, batch);

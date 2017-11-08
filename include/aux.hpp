@@ -17,23 +17,38 @@
 #define AUX_HPP
 
 namespace aux {
+    // assumes depth of 2...
     template<typename Matrix>
-    auto flatten(const Matrix& m) ->
-        typename std::remove_reference<decltype(m[0])>::type {
-        auto flat =
-            typename std::remove_reference<
-                decltype(m[0])
-            >::type (m.size() * m[0].size());
-        size_t index = 0;
+    std::vector<double> flatten_2d(Matrix m)
+    {
+        
+        std::vector<double> flat(0);
         for(const auto& row : m) {
-            for(const auto& item : row) {
-                flat[index] = item;
-                ++index;
+            for(auto item : row) {
+                flat.push_back(item);
             }
         }
         return flat;
-
     }
+
+    template<typename Image>
+    std::vector<std::vector<double>> flatten_3d(Image i)
+    {
+        std::vector<std::vector<double>> 
+            flat(1);
+        
+        for(const auto& mat : i) {
+            auto line = flatten_2d(mat);
+            for(size_t i = 0; i < line.size(); ++i) {
+                flat[0].push_back(line[i]);
+            }
+        }
+
+        return flat;
+    }
+
+
+
     // assumes depth of 2 i.e. vector<vector>, not vector<vector<...>...>
     template<typename Matrix>
     auto relu(const Matrix& c) -> Matrix {
@@ -46,15 +61,6 @@ namespace aux {
         return relud_c;
     }
 
-    // relu for 3d containers. I.E. convolutions!
-    template<typename Container>
-    auto relu3d(const Container& c) -> Container {
-        Container copy_container(c);
-        for(auto& lover : copy_container) {
-            lover = relu(lover);
-        }
-        return copy_container;
-    }
 
     template<typename Vect>
     auto dot(const Vect& v1, const Vect& v2) -> Vect {
