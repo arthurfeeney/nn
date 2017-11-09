@@ -36,7 +36,7 @@ public:
         DataCont data_batch(batch_size);
         LabelCont label_batch(batch_size);
 
-        for(int k = 0; k < batch_size; ++k) {
+        for(size_t k = 0; k < batch_size; ++k) {
             data_batch[k] = train_data[indices[k]];
             label_batch[k] = train_labels[indices[k]];
         }
@@ -65,7 +65,7 @@ public:
 
     void process_all_data() {
         chunkified_batches.clear();
-        for(int index = 0; index < train_size(); index += batch_size) {
+        for(size_t index = 0; index < train_size(); index += batch_size) {
             chunkified_batches.push_back(chunk_batch(get_batch()));
         }
     }  

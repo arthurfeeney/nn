@@ -88,7 +88,7 @@ public:
         auto test_pair = manager.test();
 
         int correct = 0;
-        for(int datum = 0; datum < manager.test_size(); ++datum) {
+        for(size_t datum = 0; datum < manager.test_size(); ++datum) {
             auto image = test_pair.first[datum];
             auto label = test_pair.second[datum];
             if(test_net.guess_and_check(image, label)) {
@@ -108,11 +108,11 @@ private:
     std::vector<std::vector<double>> (*conv_label)(const LabelCont&);
   
     void average_ensemble() {
-        for(int net = 1; net < ensemble_size; ++net) {
+        for(size_t net = 1; net < ensemble_size; ++net) {
             ensemble[0] += ensemble[net];
         }
         ensemble[0] /= ensemble_size;
-        for(int net = 1; net < ensemble_size; ++net) {
+        for(size_t net = 1; net < ensemble_size; ++net) {
             ensemble[net] = ensemble[0];
         }
     }

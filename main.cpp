@@ -52,7 +52,7 @@ vector<vector<double>> conv_mnist_data(const T& datum) {
     auto image = datum;
     vector<double> image_d(image.begin(), image.end());
     vector<vector<double>> matr_im(1, vector<double>(image_d.size(), 0));
-    for(int d = 0; d < image_d.size(); ++d) {
+    for(size_t d = 0; d < image_d.size(); ++d) {
         matr_im[0][d] = image_d[d];
     }
     return matr_im;
@@ -71,7 +71,7 @@ vector<vector<double>> conv_mnist_label(const T& l) {
 template<typename T>
 vector<vector<vector<double>>> get_all_data(const T& data) {
     vector<vector<vector<double>>> ret(data.size());
-    for(int d = 0; d < data.size(); ++d) {
+    for(size_t d = 0; d < data.size(); ++d) {
         ret[d] = conv_mnist_data(data[d]);
     }
     return ret;
@@ -80,7 +80,7 @@ vector<vector<vector<double>>> get_all_data(const T& data) {
 template<typename T>
 vector<vector<vector<double>>> get_all_label(const T& labels) {
     vector<vector<vector<double>>> ret(labels.size());
-    for(int d = 0; d < labels.size(); ++d) {
+    for(size_t d = 0; d < labels.size(); ++d) {
         ret[d] = conv_mnist_label(labels[d]);
     }
     return ret;
@@ -88,8 +88,8 @@ vector<vector<vector<double>>> get_all_label(const T& labels) {
 
 template<typename T>
 auto flat_to_im(const T& flat, size_t height, size_t width) {
-    vector<vector<vector<double>>> im(width, vector<vector<double>>(height, 
-                                                                    vector<double>(1, 0)));
+    vector<vector<vector<double>>> im(width, vector<vector<double>>(height,
+                                       vector<double>(1, 0)));
     size_t index = 0;
     for(auto& height : im) {
         for(auto& width : height) {
@@ -106,7 +106,7 @@ template<typename T>
 auto data_to_im(const T& data, size_t height, size_t width) {
     vector<vector<vector<vector<double>>>> images(data.size());
 
-    for(int i = 0; i < data.size(); ++i) {
+    for(size_t i = 0; i < data.size(); ++i) {
         images[i] = flat_to_im(data[i], height, width);
     }
     return images;
@@ -372,22 +372,27 @@ int main(int argc, char** argv) {
              double> conv_net 
     (
         data_to_im(mnist_dataset.training_images, 28, 28),
+        //get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
         data_to_im(mnist_dataset.test_images, 28, 28),
+        //get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         2,
-        1e-3,
+        1e-4,
         32,
         {
-            "dense 100 784",
+            "conv2d 4 3 2 28 28 1 1",
+            "dense 200 784",
             "relu",
-            "dense 100 100",
+            "dense 200 200",
+            "relu",
+            "dense 100 200",
             "relu",
             "dropout .5",
             "dense 10 100"
         } 
     );
-    conv_net.train(2, true, 1000);
+    conv_net.train(1, true, 1000);
     std::cout << conv_net.test();
     return 0;
 }

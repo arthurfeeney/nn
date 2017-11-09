@@ -81,6 +81,8 @@ public:
 
     virtual Image backward_pass(const Image& d_out) = 0;
 
+    virtual std::tuple<int, int, int> proper_output_dim() const = 0;
+
     virtual Layer_3D* clone() = 0;
 
     std::string type() const {

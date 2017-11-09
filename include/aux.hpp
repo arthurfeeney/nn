@@ -32,12 +32,12 @@ namespace aux {
     }
 
     template<typename Image>
-    std::vector<std::vector<double>> flatten_3d(Image i)
+    std::vector<std::vector<double>> flatten_3d(const Image& image)
     {
         std::vector<std::vector<double>> 
             flat(1);
         
-        for(const auto& mat : i) {
+        for(const auto& mat : image) {
             auto line = flatten_2d(mat);
             for(size_t i = 0; i < line.size(); ++i) {
                 flat[0].push_back(line[i]);
@@ -45,6 +45,29 @@ namespace aux {
         }
 
         return flat;
+    }
+
+    // requires a 1xN input.
+    template<typename FlatMatrix>
+    std::vector<std::vector<std::vector<double>>> 
+    unflatten(const FlatMatrix& m, size_t depth, size_t height, size_t width) {
+        using Matrix = std::vector<std::vector<double>>;
+        using Image = std::vector<Matrix>;
+
+
+        Image shaped(depth, Matrix(height, std::vector<double>(width, 0)));
+
+        size_t index = 0;
+        for(auto& d : shaped) {
+            for(auto& h : d) {
+                for(auto& w : h) {
+                    w = m[0][index];
+                    ++index;
+                }
+            }
+        }
+          
+        return shaped;
     }
 
 

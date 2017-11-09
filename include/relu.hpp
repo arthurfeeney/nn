@@ -52,8 +52,8 @@ public:
 private:
     Matrix relu(const Matrix& c) { 
         Matrix relud_c(c.size(), std::vector<Weight>(c[0].size()));
-        for(int i = 0; i < c.size(); ++i) {
-            for(int j = 0; j < c[0].size(); ++j) {
+        for(size_t i = 0; i < c.size(); ++i) {
+            for(size_t j = 0; j < c[0].size(); ++j) {
                 relud_c[i][j] = std::max<double>(c[i][j], 0);
             }
         }

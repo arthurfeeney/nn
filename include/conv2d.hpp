@@ -97,9 +97,9 @@ public:
             Image tmp(this->input_depth, 
                       Matrix(this->input_height + 2*padding, 
                              std::vector<Weight>(this->input_width + 2*padding, 0)));
-            for(int d = 0; d < this->input_depth; ++d) {
-                for(int h = padding; h < this->input_height; ++h) {
-                    for(int w = padding; w < this->input_width; ++w) {
+            for(size_t d = 0; d < this->input_depth; ++d) {
+                for(size_t h = padding; h < this->input_height; ++h) {
+                    for(size_t w = padding; w < this->input_width; ++w) {
                         tmp[d][h][w] = this->last_input[d][h-padding][w-padding];
                     }
                 }
@@ -116,9 +116,9 @@ public:
                            Matrix(output_height, 
                                   std::vector<Weight>(output_width, 0)));
         
-        for(int out_depth = 0; out_depth < filters.size(); ++out_depth) {
+        for(size_t out_depth = 0; out_depth < filters.size(); ++out_depth) {
             auto& filter = filters[out_depth];
-            for(int depth = 0; depth < this->input_depth; ++depth) {
+            for(size_t depth = 0; depth < this->input_depth; ++depth) {
                 // matrix of filter_size slice at depth..
                 Matrix filter_at_depth(filter_size, 
                                        std::vector<Weight>(filter_size));
@@ -137,12 +137,6 @@ public:
                         col_front < this->last_input[0][0].size() - filter_size + 1; 
                         col_front += stride, ++out_col) 
                     {
-                        if(out_row == output_width) {
-                            std::cout << "out_col too big" << '\n';
-                        }
-                        if(out_col == output_height) {
-                            std::cout << "out_row too big" << '\n';
-                        }
                          
                         // get window/splice of input image.
                         Matrix image_splice(filter_size,
@@ -160,7 +154,7 @@ public:
                             }
                         }
                         
-                        // build outputs from window.
+                        // build outputs from window. Elem-wise prod of window and filt
                         Matrix window(filter_size, std::vector<Weight>(filter_size));
                         for(size_t row = 0; row < filter_size; ++row) {
                             for(size_t col = 0; col < filter_size; ++col) {
@@ -169,7 +163,7 @@ public:
                             }
                         }
                         
-                        // elem-wise sum of values computed from window.
+                        // sum of values computed in window.
                         Weight elem_window_sum = 0; 
                         for(const auto& row : window) {
                             for(const auto& value : row) {
@@ -177,7 +171,7 @@ public:
                             }
                         }
                         
-                        image_output[out_depth][out_row][out_col] += elem_window_sum;
+                        image_output[out_depth][out_row][out_col] = elem_window_sum;
                         
                     }
                 }
@@ -271,11 +265,11 @@ public:
 
         // im dumb and made images h*w*d here and not d*h*w like normal. 
         // I also should probably break this up into way more functions.
-        for(int i = 0; i < this->input_height; ++i) {
-            for(int j = 0; j < this->input_width; ++j) {
-                for(int f = 0; f < num_filters; ++f) {
-                    for(int k = 0; k < output_height; ++k) {
-                        for(int l = 0; l < output_width; ++l) {
+        for(size_t i = 0; i < this->input_height; ++i) {
+            for(size_t j = 0; j < this->input_width; ++j) {
+                for(size_t f = 0; f < num_filters; ++f) {
+                    for(size_t k = 0; k < output_height; ++k) {
+                        for(size_t l = 0; l < output_width; ++l) {
                             Image mask1(filter_size, 
                                         Matrix(filter_size,
                                                std::vector<Weight>(this->input_depth, 0)));
@@ -286,8 +280,8 @@ public:
                             if((i + padding - k * stride) < filter_size &&
                                (i + padding - k * stride) >= 0) 
                             {
-                                for(int width = 0; width < filter_size; ++width) {
-                                    for(int depth = 0; depth < this->input_depth; ++depth) {
+                                for(size_t width = 0; width < filter_size; ++width) {
+                                    for(size_t depth = 0; depth < this->input_depth; ++depth) {
                                         mask1[i + padding - k * stride][width][depth] = 1.0;
                                     }
                                 }
@@ -295,8 +289,8 @@ public:
                             if((j + padding - l * stride) < filter_size &&
                                (j + padding - l * stride) >= 0)
                             {
-                                for(int height = 0; height < filter_size; ++height) {
-                                    for(int depth = 0; depth < this->input_depth; ++depth) {
+                                for(size_t height = 0; height < filter_size; ++height) {
+                                    for(size_t depth = 0; depth < this->input_depth; ++depth) {
                                         mask2[height][j + padding - l * stride][depth] = 1.0;
                                     }
                                 }
@@ -318,14 +312,14 @@ public:
                                 }
                             }
                             std::vector<Weight> w_masked(this->input_depth, 0);
-                            for(int row = 0; row < filter_size; ++row) {
-                                for(int col = 0; col < filter_size; ++col) {
-                                    for(int depth = 0; depth < this->input_depth; ++depth) {
+                            for(size_t row = 0; row < filter_size; ++row) {
+                                for(size_t col = 0; col < filter_size; ++col) {
+                                    for(size_t depth = 0; depth < this->input_depth; ++depth) {
                                         w_masked[depth] += tmp_prod[row][col][depth];
                                     }
                                 }
                             }
-                            for(int depth = 0; depth < this->input_depth; ++depth) {
+                            for(size_t depth = 0; depth < this->input_depth; ++depth) {
                                 d_input[depth][i][j] += w_masked[depth] * d_out[f][k][l];
                             }
                         }

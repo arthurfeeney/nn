@@ -23,8 +23,6 @@
 template<typename In, size_t InRank, typename Out, size_t OutRank, typename Weight = double>
 class Net {
 private:
-    //using Matrix = std::vector<std::vector<Weight>>;
-    //using Image = std::vector<Matrix>;
 
     std::vector<std::unique_ptr<Layer_2D<Weight>>> layers;
     std::vector<std::unique_ptr<Layer_3D<Weight>>> layers_3d;
@@ -86,7 +84,6 @@ public:
 
     Net(double learning_rate, const std::initializer_list<std::string>& input)
         {
-            size_t ordering_index = 0;
             for(auto iter = input.begin(); iter != input.end(); ++iter) {
                 std::string layer_string = *iter;
                 std::vector<std::string> split_layer_string;
@@ -134,7 +131,6 @@ public:
                                 std::stod(split_layer_string[1], nullptr)
                             )));
                 }
-                ++ordering_index;
             }
         }
 
@@ -154,17 +150,16 @@ public:
         const size_t batch_size = inputs.size();
         std::vector<Out> predictions(batch_size);
  
-        for(int i = 0; i < batch_size; ++i) {
+        for(size_t i = 0; i < batch_size; ++i) {
             predictions[i] = predict(inputs[i], true);
         }
-        
         std::vector<Out> losses(batch_size);
-        for(int i = 0; i < batch_size; ++i) {
+        for(size_t i = 0; i < batch_size; ++i) {
             losses[i] = loss.comp_d_loss(predictions[i], labels[i]);
         } 
         
         Out d_out = losses[0];
-        for(int i = 1; i < losses.size(); ++i) {
+        for(size_t i = 1; i < losses.size(); ++i) {
             d_out = aux::matadd(losses[0], losses[i]);
         }
 
@@ -177,6 +172,16 @@ public:
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
             d_out = layers[layer]->backward_pass(d_out);
         }
+       /* 
+        
+        std::tuple<int, int, int> dims = layers_3d[layers.size() - 1]->proper_output_dim();
+
+        int height = std::get<0>(dims);
+        int width = std::get<1>(dims);
+        int depth = std::get<2>(dims);
+
+        aux::unflatten(d_out, depth, height, width);
+*/
         // implement unflatten for updating 3d layers.
 
     }
@@ -193,6 +198,7 @@ public:
         else {
             std::cout << "Input dimensions are invalid. Predict(In, bool)\n";
         }
+        return Out();
     }
 
     In predict_3d(In input, bool training) {
@@ -214,7 +220,6 @@ public:
 
     template<typename InputType, typename LayerType>
     auto process_layer(LayerType& layer, const InputType& layer_input, bool training) 
-        -> decltype(layer->forward_pass(layer_input)) 
     {
         return layer->forward_pass(layer_input);
     }
@@ -223,9 +228,9 @@ public:
     bool guess_and_check(In input, Out label) {
         Out guess = predict(input, false);
         auto guess_iter = std::max_element(guess[0].begin(), guess[0].end());
-        int guess_index = guess_iter - guess[0].begin();
+        size_t guess_index = guess_iter - guess[0].begin();
         auto label_iter = std::max_element(label[0].begin(), label[0].end());
-        int label_index = label_iter - label[0].begin();
+        size_t label_index = label_iter - label[0].begin();
     
         return guess_index == label_index;
     }
@@ -233,14 +238,14 @@ public:
     Net<In, InRank, Out, OutRank, Weight>& 
     operator+=(const Net<In, InRank, Out, OutRank, Weight>& other) 
     {
-        for(int layer = 0; layer < layers.size(); ++layer) {
+        for(size_t layer = 0; layer < layers.size(); ++layer) {
             *(layers[layer]) += *(other.layers[layer]);
         }
         return *this;
     }
 
     Net<In, InRank, Out, OutRank, Weight>& operator/=(const size_t count) {
-        for(int layer = 0; layer < layers.size(); ++layer) {
+        for(size_t layer = 0; layer < layers.size(); ++layer) {
             *(layers[layer]) /= count;
         }  
         return *this;
