@@ -17,6 +17,19 @@
 #define AUX_HPP
 
 namespace aux {
+
+    template<typename Matrix>
+    Matrix splice(Matrix m, size_t start_row, size_t start_col, size_t size) {
+        Matrix out(size, std::vector<double>(size, 0));
+        for(size_t row = start_row; row < start_row + size; ++row) {
+            for(size_t col = start_col; col < start_col + size; ++col) {
+                out[row - start_row][col - start_col] = m[row][col];
+            }
+        }
+        return out; 
+    }
+
+
     // assumes depth of 2...
     template<typename Matrix>
     std::vector<double> flatten_2d(Matrix m)

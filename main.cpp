@@ -377,18 +377,16 @@ int main(int argc, char** argv) {
         data_to_im(mnist_dataset.test_images, 28, 28),
         //get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
-        2,
+        1,
         1e-4,
-        32,
+        1,
         {
-            "conv2d 4 3 2 28 28 1 1",
-            "dense 200 784",
+            "conv2d 4 3 2 28 28 1 0",
+            "dense 100 676",
             "relu",
-            "dense 200 200",
-            "relu",
-            "dense 100 200",
-            "relu",
-            "dropout .5",
+            //"dense 100 200",
+            //"relu",
+            //"dropout .5",
             "dense 10 100"
         } 
     );

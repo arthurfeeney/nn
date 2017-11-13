@@ -58,6 +58,7 @@ public:
             layers[index] = std::move(layer_ptr_clone);
             ++index;
         }
+        index = 0;
         for(auto& layer_ptr : other.layers_3d) {
             std::unique_ptr<Layer_3D<Weight>> layer_ptr_clone(layer_ptr->clone());
             layers_3d[index] = std::move(layer_ptr_clone);
@@ -153,6 +154,7 @@ public:
         for(size_t i = 0; i < batch_size; ++i) {
             predictions[i] = predict(inputs[i], true);
         }
+
         std::vector<Out> losses(batch_size);
         for(size_t i = 0; i < batch_size; ++i) {
             losses[i] = loss.comp_d_loss(predictions[i], labels[i]);
@@ -172,17 +174,22 @@ public:
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
             d_out = layers[layer]->backward_pass(d_out);
         }
-       /* 
         
-        std::tuple<int, int, int> dims = layers_3d[layers.size() - 1]->proper_output_dim();
+        
+        if constexpr(InRank == 3) {
+            std::tuple<int, int, int> dims = 
+                layers_3d[layers_3d.size() - 1]->proper_output_dim();
 
-        int height = std::get<0>(dims);
-        int width = std::get<1>(dims);
-        int depth = std::get<2>(dims);
+            int height = std::get<0>(dims);
+            int width = std::get<1>(dims);
+            int depth = std::get<2>(dims);
 
-        aux::unflatten(d_out, depth, height, width);
-*/
-        // implement unflatten for updating 3d layers.
+            In d_out_3d = aux::unflatten(d_out, depth, height, width);
+            for(int layer = layers_3d.size() - 1; layer >= 0; --layer) {
+                d_out_3d = layers_3d[layer]->backward_pass(d_out_3d);
+            }
+        }
+
 
     }
 
@@ -241,13 +248,19 @@ public:
         for(size_t layer = 0; layer < layers.size(); ++layer) {
             *(layers[layer]) += *(other.layers[layer]);
         }
+        for(size_t layer = 0; layer < layers_3d.size(); ++layer) {
+            *(layers_3d[layer]) += *(other.layers_3d[layer]);
+        }
         return *this;
     }
 
-    Net<In, InRank, Out, OutRank, Weight>& operator/=(const size_t count) {
+    Net<In, InRank, Out, OutRank, Weight>& operator/=(const size_t scalar) {
         for(size_t layer = 0; layer < layers.size(); ++layer) {
-            *(layers[layer]) /= count;
-        }  
+            *(layers[layer]) /= scalar;
+        }
+        for(size_t layer = 0; layer < layers_3d.size(); ++layer) {
+            *(layers_3d[layer]) /= scalar;
+        } 
         return *this;
     }
 };

@@ -55,8 +55,9 @@ public:
         return ensemble[0];
     }
     
-    void train(size_t epochs, bool verbose = false, size_t verbosity = 0) {
+    void train(size_t epochs, bool verbose = false, unsigned int verbosity = 0) {
         for(size_t epoch = 0; epoch < epochs; ++epoch) {
+
             manager.process_all_data();
             if(epoch > 0) {
                 manager.shuffle_data();
@@ -69,7 +70,9 @@ public:
                             &Ensemble::run_epoch,
                             std::ref(manager),
                             std::ref(ensemble[net]),
-                            net);
+                            net,
+                            epoch,
+                            verbosity);
             }
 
             for(auto& thread : threads) {
@@ -77,7 +80,6 @@ public:
                     thread.join();
                 }
             }
-
             average_ensemble();
         }
     }
@@ -125,9 +127,14 @@ private:
     }
 
     static void run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
-                          Net<In, InRank, Out, OutRank, Weight>& net, size_t net_id) 
+                          Net<In, InRank, Out, OutRank, Weight>& net, size_t net_id, 
+                          unsigned int epoch, unsigned int verbosity = 0) 
     {
         for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) {
+            if(net_id == 0 && verbosity && batch % verbosity == 0) { // only the 'main' net prints.
+                std::cout << "epoch: " << epoch << " step: " << 
+                             batch * manager.step_size() << '\n';
+            }
             std::pair<DataCont, LabelCont> chunk = manager.get_chunk(net_id, batch);
             net.batch_update(chunk.first, chunk.second);
         } 
