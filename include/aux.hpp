@@ -1,6 +1,7 @@
 
 /*
-* I probably could (should) have used the Eigen library for most of these.
+* I probably could (should) have used the Eigen library or somthing
+* for most of these.
 * But, I really wanted to do all of this from scratch, soooo...
 * Meh, they're all pretty easy to implement anyway.
 */
@@ -18,12 +19,42 @@
 
 namespace aux {
 
+    // type trait to find rank of a container.
+    // doesn't work on things that aren't containers.
+    template<class T, size_t N = 1>
+    struct type_rank : public 
+        std::conditional<
+            std::is_fundamental<
+                typename std::remove_reference<typename T::value_type>::type
+            >::value,
+            std::integral_constant<size_t, N>,
+            type_rank<typename T::value_type, N + 1>
+        >::type
+    {};
+
+    template<typename T>
+    constexpr size_t depth_helper(T thing, size_t d) {
+        if constexpr(std::is_fundamental<typename std::remove_reference<T>::type>::value) {
+            return d;
+        }
+        else {
+            using subtype = typename T::value_type;
+            return depth_helper<subtype>(subtype(), d + 1);
+        }
+    }
+
+    // Works on non-containers, but can't be used as a template parameter :( darn.
+    template<typename T>
+    constexpr size_t depth(T thing) {
+        return depth_helper(thing, 0);
+    }
+
     template<typename Matrix>
-    Matrix splice(Matrix m, size_t start_row, size_t start_col, size_t size) {
+    Matrix splice(const Matrix& m, size_t start_row, size_t start_col, size_t size) {
         Matrix out(size, std::vector<double>(size, 0));
-        for(size_t row = start_row; row < start_row + size; ++row) {
-            for(size_t col = start_col; col < start_col + size; ++col) {
-                out[row - start_row][col - start_col] = m[row][col];
+        for(size_t row = 0; row < size; ++row) {
+            for(size_t col = 0; col < size; ++col) {
+                out[row][col] = m[row + start_row][col + start_col];
             }
         }
         return out; 

@@ -20,7 +20,8 @@
 #ifndef NET_HPP
 #define NET_HPP
 
-template<typename In, size_t InRank, typename Out, size_t OutRank, typename Weight = double>
+template<typename In, size_t in_rank, typename Out, size_t out_rank,
+         typename Weight = double>
 class Net {
 private:
 
@@ -28,7 +29,6 @@ private:
     std::vector<std::unique_ptr<Layer_3D<Weight>>> layers_3d;
 
     Loss_Cross_Entropy<Weight> loss;
-
 
 public:
     Net():loss() {}
@@ -84,56 +84,56 @@ public:
     }
 
     Net(double learning_rate, const std::initializer_list<std::string>& input)
-        {
-            for(auto iter = input.begin(); iter != input.end(); ++iter) {
-                std::string layer_string = *iter;
-                std::vector<std::string> split_layer_string;
-                boost::split(split_layer_string, layer_string,
-                             boost::is_any_of("\t ,"));
-                for(auto iter = split_layer_string.begin();
-                    iter != split_layer_string.end()
-                    ; ) // gross
-                {
-                    if(*iter == "\0") iter = split_layer_string.erase(iter);
-                    else ++iter;
-                }
-                // construct dense ;)
-                if(split_layer_string[0] == "dense") {
-                    layers.push_back(
-                        std::unique_ptr<Layer_2D<Weight>>(
-                            new Dense<Weight>(std::stoi(split_layer_string[1]),
-                                              std::stoi(split_layer_string[2]),
-                                              learning_rate)
+    {
+        for(auto iter = input.begin(); iter != input.end(); ++iter) {
+            std::string layer_string = *iter;
+            std::vector<std::string> split_layer_string;
+            boost::split(split_layer_string, layer_string,
+                         boost::is_any_of("\t ,"));
+            for(auto iter = split_layer_string.begin();
+                iter != split_layer_string.end()
+                ; ) // gross
+            {
+                if(*iter == "\0") iter = split_layer_string.erase(iter);
+                else ++iter;
+            }
+            // construct dense ;)
+            if(split_layer_string[0] == "dense") {
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new Dense<Weight>(std::stoi(split_layer_string[1]),
+                                          std::stoi(split_layer_string[2]),
+                                          learning_rate)
                         ));
-                }
-                // construct relu!
-                else if(split_layer_string[0] == "relu") {
-                    layers.push_back(
-                        std::unique_ptr<Layer_2D<Weight>>(new Relu<Weight>()));
-                }
-                // construct the conv2d layer. Pretty gross, but w/e
-                else if(split_layer_string[0] == "conv2d") {
-                    layers_3d.push_back(
-                        std::unique_ptr<Layer_3D<Weight>>(
-                            new Conv2d<Weight>(
-                                std::stoi(split_layer_string[1]),
-                                std::stoi(split_layer_string[2]),
-                                std::stoi(split_layer_string[3]),
-                                std::stoi(split_layer_string[4]),
-                                std::stoi(split_layer_string[5]),
-                                std::stoi(split_layer_string[6]),
-                                std::stoi(split_layer_string[7]),
-                                learning_rate)));
-                }
-                else if(split_layer_string[0] == "dropout") {
-                    layers.push_back(
-                        std::unique_ptr<Layer_2D<Weight>>(
-                            new Dropout2d<Weight>(
-                                std::stod(split_layer_string[1], nullptr)
-                            )));
-                }
+            }
+            // construct relu!
+            else if(split_layer_string[0] == "relu") {
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(new Relu<Weight>()));
+            }
+            // construct the conv2d layer. Pretty gross, but w/e
+            else if(split_layer_string[0] == "conv2d") {
+                layers_3d.push_back(
+                    std::unique_ptr<Layer_3D<Weight>>(
+                        new Conv2d<Weight>(
+                            std::stoi(split_layer_string[1]),
+                            std::stoi(split_layer_string[2]),
+                            std::stoi(split_layer_string[3]),
+                            std::stoi(split_layer_string[4]),
+                            std::stoi(split_layer_string[5]),
+                            std::stoi(split_layer_string[6]),
+                            std::stoi(split_layer_string[7]),
+                            learning_rate)));
+            }
+            else if(split_layer_string[0] == "dropout") {
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new Dropout2d<Weight>(
+                            std::stod(split_layer_string[1], nullptr)
+                        )));
             }
         }
+    }
 
 
     void update(const In& input, const Out& label) {
@@ -176,7 +176,7 @@ public:
         }
         
         
-        if constexpr(InRank == 3) {
+        if constexpr(in_rank == 3) {
             std::tuple<int, int, int> dims = 
                 layers_3d[layers_3d.size() - 1]->proper_output_dim();
 
@@ -185,22 +185,22 @@ public:
             int depth = std::get<2>(dims);
 
             In d_out_3d = aux::unflatten(d_out, depth, height, width);
+
             for(int layer = layers_3d.size() - 1; layer >= 0; --layer) {
                 d_out_3d = layers_3d[layer]->backward_pass(d_out_3d);
             }
         }
-
 
     }
 
     // need to do something about intermediate variables not being In or Out...
 
     Out predict(In input, bool training) {
-        if constexpr (InRank == 3) {
+        if constexpr (in_rank == 3) {
             return predict_2d(aux::flatten_3d(predict_3d(input, training)), training); 
         }
         
-        else if constexpr (InRank == 2)  
+        else if constexpr (in_rank == 2)  
             return predict_2d(input, training); 
         else {
             std::cout << "Input dimensions are invalid. Predict(In, bool)\n";
@@ -242,8 +242,8 @@ public:
         return guess_index == label_index;
     }
     
-    Net<In, InRank, Out, OutRank, Weight>& 
-    operator+=(const Net<In, InRank, Out, OutRank, Weight>& other) 
+    Net<In, in_rank, Out, out_rank, Weight>& 
+    operator+=(const Net<In, in_rank, Out, out_rank, Weight>& other) 
     {
         for(size_t layer = 0; layer < layers.size(); ++layer) {
             *(layers[layer]) += *(other.layers[layer]);
@@ -254,7 +254,7 @@ public:
         return *this;
     }
 
-    Net<In, InRank, Out, OutRank, Weight>& operator/=(const size_t scalar) {
+    Net<In, in_rank, Out, out_rank, Weight>& operator/=(const size_t scalar) {
         for(size_t layer = 0; layer < layers.size(); ++layer) {
             *(layers[layer]) /= scalar;
         }
