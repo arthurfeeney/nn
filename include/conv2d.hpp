@@ -200,11 +200,11 @@ public:
         // compute gradients of filters.
         for(size_t fprime = 0; fprime < num_filters; ++fprime) {
             for(size_t cprime = 0; cprime < this->input_depth; ++cprime) {
+                // generate piece of the the last input.
+                Matrix sub_input(output_height,
+                        std::vector<Weight>(output_width, 0)); 
                 for(size_t i = 0; i < filter_size; ++i) {
                     for(size_t j = 0; j < filter_size; ++j) {
-                        // generate piece of the the last input.
-                        Matrix sub_input(output_height,
-                                std::vector<Weight>(output_width, 0)); 
 
                         //fill sub_input with ecessary stuff.
                         
