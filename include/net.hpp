@@ -16,6 +16,7 @@
 #include "relu.hpp"
 #include "conv2d.hpp"
 #include "dropout.hpp"
+#include "lrelu.hpp"
 
 #ifndef NET_HPP
 #define NET_HPP
@@ -131,6 +132,19 @@ public:
                         new Dropout2d<Weight>(
                             std::stod(split_layer_string[1], nullptr)
                         )));
+            }
+            else if(split_layer_string[0] == "leaky" || 
+                    split_layer_string[0] == "lrelu") 
+            {
+                if(split_layer_string.size() == 1) {
+                    layers.push_back(
+                        std::unique_ptr<Layer_2D<Weight>>(new LRelu<Weight>()));
+                }
+                else {
+                    double scale = std::stod(split_layer_string[1], nullptr);
+                    layers.push_back(
+                        std::unique_ptr<Layer_2D<Weight>>(new LRelu<Weight>(scale)));
+                }
             }
         }
     }

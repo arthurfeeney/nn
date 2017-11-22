@@ -55,11 +55,13 @@ public:
         }
     }
 
-    Net<In, aux::type_rank<In>::value, Out, aux::type_rank<Out>::value, Weight> get_net() {
+    Net<In, aux::type_rank<In>::value, Out, aux::type_rank<Out>::value, Weight> 
+    get_net() 
+    {
         return ensemble[0];
     }
     
-    void train(size_t epochs, bool verbose = false, unsigned int verbosity = 0) {
+    void train(size_t epochs, bool verbose = false, size_t verbosity = 0) {
         for(size_t epoch = 0; epoch < epochs; ++epoch) {
 
             manager.process_all_data();

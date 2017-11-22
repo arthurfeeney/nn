@@ -367,30 +367,30 @@ int main(int argc, char** argv) {
 */
     //Conv2d<double> live(4, 3, 1, 28, 28, 1, 1, 1e-3);
     //live.forward_pass(data_to_im(mnist_dataset.training_images, 28, 28)[0]);
-    Ensemble<vector<vector<vector<double>>>,
+    Ensemble<vector<vector<double>>,
              vector<vector<double>>,
              double> conv_net 
     (
-        data_to_im(mnist_dataset.training_images, 28, 28),
-        //get_all_data(mnist_dataset.training_images),
+        //data_to_im(mnist_dataset.training_images, 28, 28),
+        get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
-        data_to_im(mnist_dataset.test_images, 28, 28),
-        //get_all_data(mnist_dataset.test_images),
+        //data_to_im(mnist_dataset.test_images, 28, 28),
+        get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         1,
         1e-4,
         16,
         {
-            "conv2d 4 5 2 28 28 1 0",
-            "dense 100 576",
-            "relu",
+            //"conv2d 4 5 2 28 28 1 0",
+            "dense 100 784",
+            "leaky .00001",
             "dense 100 100",
-            "relu",
-            //"dropout .5",
+            "leaky .00001",
+            "dropout .5",
             "dense 10 100"
         } 
     );
-    conv_net.train(2, true, 1000);
+    conv_net.train(3, true, 1000);
     std::cout << conv_net.test();
     return 0;
 }
