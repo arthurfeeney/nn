@@ -4,9 +4,12 @@
 #include <string>
 #include <tuple>
 #include <memory>
+#include <thread>
+#include <functional>
 
 #include "aux.hpp"
 #include "layers.hpp"
+#include "thread_aux.hpp"
 
 #ifndef ACTIVATION_HPP
 #define ACTIVATION_HPP
@@ -30,6 +33,11 @@ public:
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;
         return relu(input);
+    }
+
+    Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
+        // need to implement
+        return Matrix();
     }
 
     Matrix operator()(const Matrix& input) {
@@ -60,17 +68,30 @@ private:
         return relud_c;
     }
 
-    Image relu(const Image& c) {
-        Image relud_c(c.size(), 
-                      std::vector<Weight>(c[0].size(), 
-                                          std::vector<Weight>(c[0][0].size())));
-        for(int i = 0; i < c.size(); ++i) {
-            for(int j = 0; j < c[0].size(); ++j) {
-                for(int k = 0; k < c[0][0].size(); ++k) {
-                    relud_c[i][j][k] = std::max<double>(c[i][j][k], 0);
-                }
+    
+    void relu_thread_task(std::vector<int>& rows, 
+                          const Matrix& A,
+                          Matrix& B) {
+        for(const auto& row : rows) {
+            for(size_t col = 0; col < A[0].size(); ++col) {
+                B[row][col] = std::max<double>(A[row][col], 0);
             }
         }
+    }
+
+    Matrix async_relu(const Matrix& A, size_t n_threads) {
+        Matrix B(A.size(), std::vector<Weight>(A[0].size()));
+        auto rows = thread_alg::split_indices(A.size(), n_threads);
+        std::vector<std::thread> threads;
+        for(size_t thread = 0; thread < n_threads; ++thread) {
+            threads.emplace_back(rows[thread],
+                                 std::ref(A),
+                                 std::ref(B));
+        }
+        for(auto& thread : threads) {
+            thread.join();
+        }
+        return B;
     }
 };
 

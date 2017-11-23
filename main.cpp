@@ -11,7 +11,6 @@
 #include "include/ensemble.hpp"
 #include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
 
-
 using std::vector;
 using std::make_unique;
 using std::pair;
@@ -253,7 +252,7 @@ int main(int argc, char** argv) {
 
     auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
         (   // mnist data location.
-            "/home/afeeney/pet/net/mnist_data/mnist/");
+            "/home/arthur/pet/nn/mnist_data/mnist/");
 
 /*
     Net<double> simp_mnist_net(
@@ -367,6 +366,7 @@ int main(int argc, char** argv) {
 */
     //Conv2d<double> live(4, 3, 1, 28, 28, 1, 1, 1e-3);
     //live.forward_pass(data_to_im(mnist_dataset.training_images, 28, 28)[0]);
+    
     Ensemble<vector<vector<double>>,
              vector<vector<double>>,
              double> conv_net 
@@ -382,15 +382,24 @@ int main(int argc, char** argv) {
         16,
         {
             //"conv2d 4 5 2 28 28 1 0",
-            "dense 100 784",
-            "leaky .00001",
-            "dense 100 100",
-            "leaky .00001",
+            "dense 300 784",
+            //"leaky .00001",
+            "relu",
+            "dense 150 300",
+            //"leaky .00001",
+            "relu",
             "dropout .5",
-            "dense 10 100"
-        } 
+            "dense 10 150"
+        }, 
+        1
     );
-    conv_net.train(3, true, 1000);
+    auto start = std::chrono::system_clock::now();
+    conv_net.train(1, true, 1000);
     std::cout << conv_net.test();
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "time: " << elapsed_seconds.count() << '\n';
+
+
     return 0;
 }

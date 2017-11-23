@@ -3,7 +3,7 @@
 #include <string>
 #include <utility>
 #include <thread>
-#include <functional> //contains std::ref
+#include <functional>
 #include <random>
 #include <iostream>
 #include <type_traits>
@@ -21,6 +21,9 @@ public:
     using DataCont = std::vector<In>;
     using LabelCont = std::vector<Out>;
 
+    using InRank = aux::type_rank<In>;
+    using OutRank = aux::type_rank<Out>;
+
     Ensemble(DataCont train_data,
              LabelCont train_labels,
              DataCont test_data,
@@ -29,8 +32,11 @@ public:
              double learning_rate, 
              size_t batch_size,
              std::initializer_list<std::string> input,
-             std::vector<std::vector<double>> (*cd)(const DataCont&) = nullptr, 
-             std::vector<std::vector<double>> (*cl)(const LabelCont&) = nullptr):
+             size_t n_threads = 1,
+             std::vector<std::vector<double>> 
+                (*cd)(const DataCont&) = nullptr, 
+             std::vector<std::vector<double>> 
+                (*cl)(const LabelCont&) = nullptr):
         manager(train_data,
                 train_labels,
                 test_data,
@@ -50,12 +56,13 @@ public:
         conv_data = cd;
         conv_label = cl;
         if(batch_size % ensemble_size != 0) {
-            std::cout << "batch size should be a multiple of ensemble size." << '\n';
+            std::cout << "batch size should be a multiple of ensemble size." 
+                      << '\n';
             throw std::invalid_argument("bad batch and ensemble size");
         }
     }
 
-    Net<In, aux::type_rank<In>::value, Out, aux::type_rank<Out>::value, Weight> 
+    Net<In, InRank::value, Out, OutRank::value, Weight>
     get_net() 
     {
         return ensemble[0];
@@ -91,7 +98,7 @@ public:
     }
 
     double test() {
-        Net<In, aux::type_rank<In>::value, Out, aux::type_rank<Out>::value, Weight> 
+        Net<In, InRank::value, Out, OutRank::value, Weight> 
             test_net = get_net();
 
         auto test_pair = manager.test();
@@ -104,17 +111,20 @@ public:
                 correct += 1;
             }
         }
-        return static_cast<double>(correct) / static_cast<double>(manager.test_size());
+        return static_cast<double>(correct) / 
+               static_cast<double>(manager.test_size());
     }
 
 private:
 
     Data_Manager<DataCont, LabelCont, Weight> manager; // holds test and train data
 
-    std::vector<Net<In, aux::type_rank<In>::value, Out, aux::type_rank<Out>::value, Weight>>
+    std::vector<Net<In, InRank::value, Out, OutRank::value, Weight>>
         ensemble;
 
     size_t ensemble_size;
+
+    size_t n_threads;
     
     std::vector<std::vector<double>> (*conv_data)(const DataCont&);
     std::vector<std::vector<double>> (*conv_label)(const LabelCont&);
@@ -130,7 +140,7 @@ private:
     }
 
     static void process_chunk(
-        Net<In, aux::type_rank<In>::value, Out, aux::type_rank<Out>::value, Weight>& net, 
+        Net<In, InRank::value, Out, OutRank::value, Weight>& net, 
         std::pair<DataCont, LabelCont>& chunk)
     {
         DataCont chunk_data = chunk.first;
@@ -138,10 +148,10 @@ private:
         net.batch_update(chunk_data, chunk_labels); 
     }
 
-    static void run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
-                          Net<In, aux::type_rank<In>::value, Out, aux::type_rank<Out>::value,
-                              Weight>& net, size_t net_id, 
-                          unsigned int epoch, unsigned int verbosity = 0) 
+    static void 
+    run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
+              Net<In, InRank::value, Out, OutRank::value, Weight>& net,
+              size_t net_id, unsigned int epoch, unsigned int verbosity = 0) 
     {
         for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) {
             if(net_id == 0 && verbosity && batch % verbosity == 0) {
@@ -149,7 +159,8 @@ private:
                 std::cout << "epoch: " << epoch << " step: " << 
                              batch * manager.step_size() << '\n';
             }
-            std::pair<DataCont, LabelCont> chunk = manager.get_chunk(net_id, batch);
+            std::pair<DataCont, LabelCont> chunk = 
+                manager.get_chunk(net_id, batch);
             net.batch_update(chunk.first, chunk.second);
         } 
     }

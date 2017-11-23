@@ -93,6 +93,8 @@ public:
 
     virtual Matrix forward_pass(const Matrix& input) = 0;
 
+    virtual Matrix async_forward_pass(const Matrix& input, size_t nt) = 0;
+
     virtual Matrix backward_pass(const Matrix& input) = 0;
 
     virtual Matrix operator()(const Matrix& input) = 0;

@@ -63,6 +63,11 @@ public:
         return dropped;
     }
 
+    Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
+        // need to implement!
+        return Matrix();
+    }
+
     Matrix operator()(const Matrix& input) {
         return forward_pass(input);
     }

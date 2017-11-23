@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "aux.hpp"
+#include "thread_aux.hpp"
 #include "layers.hpp"
 
 #ifndef DENSE_HPP
@@ -53,6 +54,16 @@ struct Dense : public Layer_2D<Weight> {
         // adds bias to 1xN matrix;
         Matrix apply_bias = aux::matadd(apply_weights, this->bias);
         // saves the output of layer.
+        this->last_output = apply_bias;
+        return apply_bias; //returns the scores
+    }
+
+    Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
+        
+        this->last_input = input;
+        Matrix apply_weights = thread_alg::matmul(input, 
+                                                  this->weights, n_threads);
+        Matrix apply_bias = aux::matadd(apply_weights, this->bias);
         this->last_output = apply_bias;
         return apply_bias; //returns the scores
     }

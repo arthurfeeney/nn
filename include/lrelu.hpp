@@ -37,6 +37,11 @@ public:
         return leaky_relu(input);
     }
 
+    Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
+        // need to implememt.
+        return Matrix();
+    }
+
     Matrix operator()(const Matrix& input) {
         return forward_pass(input);
     }
@@ -46,7 +51,8 @@ public:
         for(size_t row = 0; row < d_out.size(); ++row) {
             for(size_t col = 0; col < d_out[0].size(); ++col) {
                 // if value in spot of last_input < 0,
-                // set value in d_out to the scale, other wise keep it the same.
+                // set value in d_out to the scale, 
+                // other wise keep it the same.
                 // cuz (d/dx scale*x) = scale.
                 Weight val = this->last_input[row][col];
                 d_input[row][col] = val >= 0 ? d_out[row][col] : scale;
