@@ -1,7 +1,7 @@
 
 /*
-* Computes the loss. I didn't think it made sense to put this
 * in aux.hpp.
+* A loss function. Probably need to make some better ones to use...
 */
 
 #include <vector>

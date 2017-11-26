@@ -98,7 +98,10 @@ public:
         for(size_t filter = 0; filter < filters.size(); ++filter) {
             for(size_t height = 0; height < filters[0].size(); ++height) {
                 for(size_t width = 0; width < filters[0][0].size(); ++width) {
-                    for(size_t depth = 0; depth < filters[0][0][0].size(); ++depth) {
+                    for(size_t depth = 0; 
+                        depth < filters[0][0][0].size(); 
+                        ++depth) 
+                    {
                         filters[filter][height][width][depth] +=
                             other.filters[filter][height][width][depth];
                     }
@@ -112,7 +115,10 @@ public:
         for(size_t filter = 0; filter < filters.size(); ++filter) {
             for(size_t height = 0; height < filters[0].size(); ++height) {
                 for(size_t width = 0; width < filters[0][0].size(); ++width) {
-                    for(size_t depth = 0; depth < filters[0][0][0].size(); ++depth) {
+                    for(size_t depth = 0; 
+                        depth < filters[0][0][0].size(); 
+                        ++depth) 
+                    {
                         filters[filter][height][width][depth] /= scalar;
                     }
                 }

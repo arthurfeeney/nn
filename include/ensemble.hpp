@@ -33,10 +33,8 @@ public:
              size_t batch_size,
              std::initializer_list<std::string> input,
              size_t n_threads = 1,
-             std::vector<std::vector<double>> 
-                (*cd)(const DataCont&) = nullptr, 
-             std::vector<std::vector<double>> 
-                (*cl)(const LabelCont&) = nullptr):
+             In (*cd)(const DataCont&) = nullptr, 
+             Out (*cl)(const LabelCont&) = nullptr):
         manager(train_data,
                 train_labels,
                 test_data,
@@ -50,6 +48,7 @@ public:
                      aux::type_rank<Out>::value, 
                      Weight>(learning_rate, input)),
         ensemble_size(ensemble_size), 
+        n_threads(n_threads),
         conv_data(cd),
         conv_label(cl)
     {
@@ -117,7 +116,7 @@ public:
 
 private:
 
-    Data_Manager<DataCont, LabelCont, Weight> manager; // holds test and train data
+    Data_Manager<DataCont, LabelCont, Weight> manager; // holds data
 
     std::vector<Net<In, InRank::value, Out, OutRank::value, Weight>>
         ensemble;
@@ -126,8 +125,9 @@ private:
 
     size_t n_threads;
     
-    std::vector<std::vector<double>> (*conv_data)(const DataCont&);
-    std::vector<std::vector<double>> (*conv_label)(const LabelCont&);
+    // optional functions to convert data to needed format.
+    In (*conv_data)(const DataCont&);
+    Out (*conv_label)(const LabelCont&);
   
     void average_ensemble() {
         for(size_t net = 1; net < ensemble_size; ++net) {

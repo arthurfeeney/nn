@@ -367,38 +367,34 @@ int main(int argc, char** argv) {
     //Conv2d<double> live(4, 3, 1, 28, 28, 1, 1, 1e-3);
     //live.forward_pass(data_to_im(mnist_dataset.training_images, 28, 28)[0]);
     
-    Ensemble<vector<vector<double>>,
+    Ensemble<vector<vector<vector<double>>>,
              vector<vector<double>>,
              double> conv_net 
     (
-        //data_to_im(mnist_dataset.training_images, 28, 28),
-        get_all_data(mnist_dataset.training_images),
+        data_to_im(mnist_dataset.training_images, 28, 28),
+        //get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
-        //data_to_im(mnist_dataset.test_images, 28, 28),
-        get_all_data(mnist_dataset.test_images),
+        data_to_im(mnist_dataset.test_images, 28, 28),
+        //get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         1,
         1e-4,
-        16,
+        4,
         {
-            //"conv2d 4 5 2 28 28 1 0",
-            "dense 300 784",
+            "conv2d 4 5 2 28 28 1 0",
+            "dense 50 576",
             //"leaky .00001",
             "relu",
-            "dense 150 300",
-            //"leaky .00001",
-            "relu",
-            "dropout .5",
-            "dense 10 150"
-        }, 
-        1
+            //"dropout .5",
+            "dense 10 50"
+        } 
     );
     auto start = std::chrono::system_clock::now();
     conv_net.train(1, true, 1000);
     std::cout << conv_net.test();
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "time: " << elapsed_seconds.count() << '\n';
+    std::cout << '\n' << "time: " << elapsed_seconds.count() << '\n';
 
 
     return 0;

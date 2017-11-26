@@ -55,13 +55,16 @@ public:
         layers_3d.resize(other.layers_3d.size());
         int index = 0;
         for(auto& layer_ptr : other.layers) {
-            std::unique_ptr<Layer_2D<Weight>> layer_ptr_clone(layer_ptr->clone());
+            std::unique_ptr<Layer_2D<Weight>> 
+                layer_ptr_clone(layer_ptr->clone());
+            
             layers[index] = std::move(layer_ptr_clone);
             ++index;
         }
         index = 0;
         for(auto& layer_ptr : other.layers_3d) {
-            std::unique_ptr<Layer_3D<Weight>> layer_ptr_clone(layer_ptr->clone());
+            std::unique_ptr<Layer_3D<Weight>> 
+                layer_ptr_clone(layer_ptr->clone());
             layers_3d[index] = std::move(layer_ptr_clone);
             ++index;
         }
@@ -75,11 +78,15 @@ public:
         loss(other.loss)
     {
         for(auto& layer_ptr : other.layers) {
-            std::unique_ptr<Layer_2D<Weight>> layer_ptr_clone(layer_ptr->clone());
+            std::unique_ptr<Layer_2D<Weight>> 
+                layer_ptr_clone(layer_ptr->clone());
+            
             layers.push_back(std::move(layer_ptr_clone));
         }
         for(auto& layer_ptr : other.layers_3d) {
-            std::unique_ptr<Layer_3D<Weight>> layer_ptr_clone(layer_ptr->clone());
+            std::unique_ptr<Layer_3D<Weight>> 
+                layer_ptr_clone(layer_ptr->clone());
+            
             layers_3d.push_back(std::move(layer_ptr_clone));
         }
     }
@@ -138,12 +145,18 @@ public:
             {
                 if(split_layer_string.size() == 1) {
                     layers.push_back(
-                        std::unique_ptr<Layer_2D<Weight>>(new LRelu<Weight>()));
+                        std::unique_ptr<Layer_2D<Weight>>(
+                            new LRelu<Weight>()
+                        )
+                    );
                 }
                 else {
                     double scale = std::stod(split_layer_string[1], nullptr);
                     layers.push_back(
-                        std::unique_ptr<Layer_2D<Weight>>(new LRelu<Weight>(scale)));
+                        std::unique_ptr<Layer_2D<Weight>>(
+                            new LRelu<Weight>(scale)
+                        )
+                    );
                 }
             }
         }
@@ -211,7 +224,8 @@ public:
 
     Out predict(In input, bool training) {
         if constexpr (in_rank == 3) {
-            return predict_2d(aux::flatten_3d(predict_3d(input, training)), training); 
+            auto flattened = aux::flatten_3d(predict_3d(input, training));
+            return predict_2d(flattened, training); 
         }
         
         else if constexpr (in_rank == 2)  
@@ -240,7 +254,9 @@ public:
     }
 
     template<typename InputType, typename LayerType>
-    auto process_layer(LayerType& layer, const InputType& layer_input, bool training) 
+    auto process_layer(LayerType& layer, 
+                       const InputType& layer_input, 
+                       bool training) 
     {
         return layer->forward_pass(layer_input);
     }
