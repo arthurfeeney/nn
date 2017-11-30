@@ -32,7 +32,7 @@ public:
              double learning_rate, 
              size_t batch_size,
              std::initializer_list<std::string> input,
-             size_t n_threads = 1,
+             size_t n_threads = 1, // num of threads available to EACH network.
              In (*cd)(const DataCont&) = nullptr, 
              Out (*cl)(const LabelCont&) = nullptr):
         manager(train_data,
@@ -84,7 +84,8 @@ public:
                             std::ref(ensemble[net]),
                             net,
                             epoch,
-                            verbosity);
+                            verbosity,
+                            n_threads);
             }
 
             for(auto& thread : threads) {
@@ -123,7 +124,7 @@ private:
 
     size_t ensemble_size;
 
-    size_t n_threads;
+    size_t n_threads; // number of threads available to EACH network.
     
     // optional functions to convert data to needed format.
     In (*conv_data)(const DataCont&);
@@ -139,9 +140,9 @@ private:
         }
     }
 
-    static void process_chunk(
-        Net<In, InRank::value, Out, OutRank::value, Weight>& net, 
-        std::pair<DataCont, LabelCont>& chunk)
+    static void 
+    process_chunk(Net<In, InRank::value, Out, OutRank::value, Weight>& net, 
+                  std::pair<DataCont, LabelCont>& chunk)
     {
         DataCont chunk_data = chunk.first;
         LabelCont chunk_labels = chunk.second;
@@ -151,7 +152,8 @@ private:
     static void 
     run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
               Net<In, InRank::value, Out, OutRank::value, Weight>& net,
-              size_t net_id, unsigned int epoch, unsigned int verbosity = 0) 
+              size_t net_id, unsigned int epoch, unsigned int verbosity = 0,
+              const size_t num_threads = 1) 
     {
         for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) {
             if(net_id == 0 && verbosity && batch % verbosity == 0) {
@@ -161,7 +163,7 @@ private:
             }
             std::pair<DataCont, LabelCont> chunk = 
                 manager.get_chunk(net_id, batch);
-            net.batch_update(chunk.first, chunk.second);
+            net.batch_update(chunk.first, chunk.second, num_threads);
         } 
     }
 };

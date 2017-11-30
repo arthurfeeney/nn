@@ -48,13 +48,16 @@ namespace thread_alg {
         using value_type = typename Matrix::value_type;
         Matrix C(A.size(), value_type(B[0].size()));
         
-        auto rows = split_indices(A.size(), n_threads / 2);
-        auto cols = split_indices(B[0].size(), n_threads / 2);
+        size_t row_split_count = n_threads - (n_threads / 2);
+        size_t col_split_count = n_threads / 2;
+
+        auto rows = split_indices(A.size(), row_split_count);
+        auto cols = split_indices(B[0].size(), col_split_count);
         
         std::vector<std::thread> threads;
         
-        for(size_t row = 0; row < n_threads / 2; ++row) {
-            for(size_t col = 0; col < n_threads / 2; ++col) {
+        for(size_t row = 0; row < row_split_count; ++row) {
+            for(size_t col = 0; col < col_split_count; ++col) {
                 threads.emplace_back(
                         &comp_matr_sub<Matrix>,
                         std::ref(rows[row]),

@@ -4,9 +4,11 @@
 #include <algorithm>
 #include <utility>
 #include <memory>
+#include <thread>
 
 #include "layers.hpp"
 #include "aux.hpp"
+#include "thread_aux.hpp"
 
 #ifndef DROPOUT_HPP
 #define DROPOUT_HPP
@@ -64,8 +66,30 @@ public:
     }
 
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
-        // need to implement!
-        return Matrix();
+        this->last_input = input;
+        if(!this->is_training) {
+            this->last_output = input;
+            return input; 
+        }
+        Matrix dropped(input.size(), std::vector<Weight>(input[0].size(), 0));
+        Matrix mask(input.size(), std::vector<Weight>(input[0].size(), 0));
+        for(size_t row = 0; row < mask.size(); ++row) {
+            std::fill(mask[row].begin(), mask[row].end(), 
+                      static_cast<Weight>(keep()) / keep_prob);
+        } 
+        auto rows = thread_alg::split_indices(input.size(), n_threads);
+        std::vector<std::thread> threads;
+        for(size_t thread = 0; thread < n_threads; ++thread) {
+            threads.emplace_back(&Dropout2d::async_apply_drop,
+                                 std::ref(rows[thread]),
+                                 std::ref(mask),
+                                 std::ref(input),
+                                 std::ref(dropped));
+        }
+        for(auto& thread : threads) {
+            thread.join();
+        }
+        return dropped;
     }
 
     Matrix operator()(const Matrix& input) {
@@ -87,6 +111,18 @@ private:
     
     bool keep() {
         return aux::gen_double(0, 1) <= keep_prob;
+    }
+
+    static void async_apply_drop(std::vector<int>& rows,
+                                 const Matrix& mask,
+                                 const Matrix& input,
+                                 Matrix& to_drop) 
+    {
+        for(const auto& row : rows) {
+            for(size_t col = 0; col < to_drop[0].size(); ++col) {
+                to_drop[row][col] = input[row][col] * mask[row][col];
+            }
+        }
     }
 };
 

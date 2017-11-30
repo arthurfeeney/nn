@@ -173,36 +173,33 @@ public:
     }
 
     void batch_update(const std::vector<In>& inputs, 
-                      const std::vector<Out>& labels) 
+                      const std::vector<Out>& labels,
+                      const size_t n_threads = 1) 
     {
         const size_t batch_size = inputs.size();
-        std::vector<Out> predictions(batch_size);
- 
+
+        In input(batch_size);
+        Out label(batch_size);
         for(size_t i = 0; i < batch_size; ++i) {
-            predictions[i] = predict(inputs[i], true);
+            input[i] = inputs[i][0];
+            label[i] = labels[i][0];
         }
 
-        std::vector<Out> losses(batch_size);
-        for(size_t i = 0; i < batch_size; ++i) {
-            losses[i] = loss.comp_d_loss(predictions[i], labels[i]);
-        } 
-        
-        Out d_out = losses[0];
-        for(size_t i = 1; i < losses.size(); ++i) {
-            d_out = aux::matadd(losses[0], losses[i]);
-        }
+        Out prediction = predict(input, true, n_threads);
 
+        Out d_out(loss.comp_d_loss(prediction, label));
+         
         for(auto& row : d_out) {
-            for(auto& item : row) {
-                item /= batch_size;
+            for(auto& val : row) {
+                val /= batch_size;
             }
         }
-
+        
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
             d_out = layers[layer]->backward_pass(d_out);
+        
         }
-        
-        
+
         if constexpr(in_rank == 3) {
             std::tuple<int, int, int> dims = 
                 layers_3d[layers_3d.size() - 1]->proper_output_dim();
@@ -217,26 +214,25 @@ public:
                 d_out_3d = layers_3d[layer]->backward_pass(d_out_3d);
             }
         }
-
     }
 
     // need to do something about intermediate variables not being In or Out...
 
-    Out predict(In input, bool training) {
+    Out predict(In input, bool training, const size_t n_threads) {
         if constexpr (in_rank == 3) {
-            auto flattened = aux::flatten_3d(predict_3d(input, training));
-            return predict_2d(flattened, training); 
-        }
-        
+            auto prediction_3d = predict_3d(input, training, n_threads);
+            auto flattened = aux::flatten_3d(prediction_3d);
+            return predict_2d(flattened, training, n_threads); 
+        } 
         else if constexpr (in_rank == 2)  
-            return predict_2d(input, training); 
+            return predict_2d(input, training, n_threads); 
         else {
             std::cout << "Input dimensions are invalid. Predict(In, bool)\n";
         }
         return Out();
     }
 
-    In predict_3d(In input, bool training) {
+    In predict_3d(In input, bool training, const size_t n_threads) {
         for(const auto& layer : layers_3d) {
             layer->set_phase(training);
             input = layer->forward_pass(input);
@@ -244,11 +240,19 @@ public:
         return input;
     }
 
-    Out predict_2d(Out input, bool training) {
+    Out predict_2d(Out input, bool training, const size_t n_threads) {
         Out& trans = input;
         for(const auto& layer : layers) {
             layer->set_phase(training);
-            trans = layer->forward_pass(trans);
+            trans = n_threads > 1 ?
+                        layer->async_forward_pass(input, n_threads) :
+                        layer->forward_pass(trans);
+            /*for(auto& row : trans) {
+                for(auto& val : row) {
+                    std::cout << val << ' ';
+                }
+                std::cout << '\n';
+            }*/
         }
         return trans;
     }
@@ -262,8 +266,8 @@ public:
     }
 
     // returns true if guess was correct, else false.
-    bool guess_and_check(In input, Out label) {
-        Out guess = predict(input, false);
+    bool guess_and_check(In input, Out label, size_t n_threads = 1) {
+        Out guess = predict(input, false, n_threads);
         auto guess_iter = std::max_element(guess[0].begin(), guess[0].end());
         size_t guess_index = guess_iter - guess[0].begin();
         auto label_iter = std::max_element(label[0].begin(), label[0].end());

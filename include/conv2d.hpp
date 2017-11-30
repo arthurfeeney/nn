@@ -142,15 +142,14 @@ public:
 
                 for(size_t row_front = 0, out_row = 0;
                     row_front < 
-                        this->input_height - filter_size - stride + padding;
+                        this->input_height - stride - 1;
                     row_front += stride, ++out_row) 
                 {
                     for(size_t col_front = 0, out_col = 0;
                         col_front < 
-                            this->input_width - filter_size - stride + padding;
+                            this->input_width - stride - 1;
                         col_front += stride, ++out_col) 
                     {
-                        /*
                         // get window of the filter.
                         Matrix image_splice = aux::splice(image_at_depth,
                                                           row_front,
@@ -173,7 +172,6 @@ public:
                             }
                         }
                         image_output[out_depth][out_row][out_col] = win_sum;
-                        */
                     }
                 }
             } 
@@ -194,16 +192,6 @@ public:
          * dx - gradient with respect to input.
          * dw - gradient with respect to weights.
          */
-        /*
-        for(auto& d : d_out) {
-            for(auto& row : d) {
-                for(auto& val : row) {
-                    std::cout << val << ' ';
-                }
-                std::cout << '\n';
-            }
-            std::cout << '\n';
-        }
         num_filters = this->filters.size();
         
         // will need to pad this->last_input when I add in padding.
@@ -217,23 +205,29 @@ public:
                 Image(filter_size, 
                       Matrix(filter_size,
                              std::vector<Weight>(this->input_depth, 0))));
-        */
         // well written ^^^^ 
         // compute gradients of filters.
-        /*
         for(size_t fprime = 0; fprime < num_filters; ++fprime) {
             for(size_t cprime = 0; cprime < this->input_depth; ++cprime) {
                 // generate piece of the the last input.
-                Matrix sub_input(output_height,
-                        std::vector<Weight>(output_width, 0)); 
                 for(size_t i = 0; i < filter_size; ++i) {
                     for(size_t j = 0; j < filter_size; ++j) {
 
-                        //fill sub_input with ecessary stuff.
                         
-                        // fill d_filters with element-wise sum of product 
-                        // of regions.
-
+                        Matrix sub_input(output_height,
+                                std::vector<Weight>(output_width, 0)); 
+                        for(size_t input_row = i, sub_row = 0; 
+                            sub_row < output_height; 
+                            input_row += stride, sub_row += 1) 
+                        {
+                            for(size_t input_col = j, sub_col = 0; 
+                                sub_col < output_width;
+                                input_col += stride, sub_col += 1) 
+                            {
+                                sub_input[sub_row][sub_col] = 
+                                    this->last_input[cprime][input_row][input_col];
+                            }
+                        }
                         double window_sum = 0;
                         for(size_t row = 0; row < output_height; ++row) {
                             for(size_t col = 0; col < output_width; ++col) {
@@ -246,9 +240,7 @@ public:
                 }
             }
         }
-        */
 
-        /*
         // update filters.
         for(size_t filter = 0; filter < num_filters; ++filter) {
             for(size_t height = 0; height < filter_size; ++height) {
@@ -261,7 +253,6 @@ public:
                 }
             }
         }
-        */
         /*
 
         // compute d_input

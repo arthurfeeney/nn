@@ -36,8 +36,8 @@ public:
     }
 
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
-        // need to implement
-        return Matrix();
+        this->last_input = input;
+        return async_relu(input, n_threads);
     }
 
     Matrix operator()(const Matrix& input) {
@@ -69,22 +69,24 @@ private:
     }
 
     
-    void relu_thread_task(std::vector<int>& rows, 
-                          const Matrix& A,
-                          Matrix& B) {
-        for(const auto& row : rows) {
-            for(size_t col = 0; col < A[0].size(); ++col) {
-                B[row][col] = std::max<double>(A[row][col], 0);
+    static void relu_thread_task(std::vector<int>& indices, 
+                                 const Matrix& A,
+                                 Matrix& B) 
+    {
+        for(const auto& index : indices) {
+            for(size_t i = 0; i < A.size(); ++i) {
+                B[i][index] = std::max<double>(A[i][index], 0);
             }
         }
     }
 
     Matrix async_relu(const Matrix& A, size_t n_threads) {
         Matrix B(A.size(), std::vector<Weight>(A[0].size()));
-        auto rows = thread_alg::split_indices(A.size(), n_threads);
+        auto rows = thread_alg::split_indices(A[0].size(), n_threads);
         std::vector<std::thread> threads;
         for(size_t thread = 0; thread < n_threads; ++thread) {
-            threads.emplace_back(rows[thread],
+            threads.emplace_back(&Relu::relu_thread_task,
+                                 std::ref(rows[thread]),
                                  std::ref(A),
                                  std::ref(B));
         }

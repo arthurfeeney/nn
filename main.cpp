@@ -10,6 +10,7 @@
 #include "include/net.hpp"
 #include "include/ensemble.hpp"
 #include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
+#include "include/conv2d.hpp"
 
 using std::vector;
 using std::make_unique;
@@ -252,7 +253,7 @@ int main(int argc, char** argv) {
 
     auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
         (   // mnist data location.
-            "/home/arthur/pet/nn/mnist_data/mnist/");
+            "/home/afeeney/pet/net/mnist_data/mnist/");
 
 /*
     Net<double> simp_mnist_net(
@@ -367,35 +368,83 @@ int main(int argc, char** argv) {
     //Conv2d<double> live(4, 3, 1, 28, 28, 1, 1, 1e-3);
     //live.forward_pass(data_to_im(mnist_dataset.training_images, 28, 28)[0]);
     
-    Ensemble<vector<vector<vector<double>>>,
+
+    Ensemble<vector<vector<double>>,
              vector<vector<double>>,
              double> conv_net 
     (
-        data_to_im(mnist_dataset.training_images, 28, 28),
-        //get_all_data(mnist_dataset.training_images),
+        //data_to_im(mnist_dataset.training_images, 28, 28),
+        get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
-        data_to_im(mnist_dataset.test_images, 28, 28),
-        //get_all_data(mnist_dataset.test_images),
+        //data_to_im(mnist_dataset.test_images, 28, 28),
+        get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
-        1,
-        1e-4,
-        4,
+        2, // ensemble size
+        1e-4, // learning rate
+        8, // batch size
         {
-            "conv2d 4 5 2 28 28 1 0",
-            "dense 50 576",
+            //"conv2d 2 3 1 28 28 1 0",
+            //"dense 50 1352",
+            "dense 100 784",
+            //"leaky .00001",
+            "relu",
+            "dense 50 100",
             //"leaky .00001",
             "relu",
             //"dropout .5",
             "dense 10 50"
-        } 
+        },
+        1// number of threads per network in ensemble.
     );
     auto start = std::chrono::system_clock::now();
-    conv_net.train(1, true, 1000);
+    conv_net.train(2, true, 1000);
     std::cout << conv_net.test();
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
     std::cout << '\n' << "time: " << elapsed_seconds.count() << '\n';
+    
+    /*
+    Conv2d<double> live(4, 3, 1, 4, 4, 4, 0, 1e-4);
+    
+    vector<vector<vector<double>>> i {
+        {
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1}
+        },
+        {
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1}
+        },
+        {
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1}
+        },
+        {
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1},
+            {1,1,1,1}
+        }
+    };
+    
+    auto ni = live.forward_pass(i);
 
+    for(auto& c : ni) {
+        for(auto& r : c) {
+            for(auto& val : r) {
+                std::cout << val << ' ';
+            }   
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+*/
 
     return 0;
 }
