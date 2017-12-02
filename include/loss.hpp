@@ -44,8 +44,7 @@ static int correct_index(S label) {
 
 using S = std::vector<std::vector<double>>;
 
-std::pair<S, double> loss(S scores, 
-                         S actual) {
+std::pair<S, double> loss(S scores, S actual) {
     /*
     * actual is a batch of one hot encodings.
     * Whichever index contains 1, is correct.
@@ -87,8 +86,10 @@ std::pair<S, double> loss(S scores,
     double data_loss = add_probs / num_examples;
 
     // I don't think I am going to use regularization loss... For now.
+    
+    //double reg_loss = 0.5 * 1e-3 * (sum_weights*sum_weights);
 
-    double loss = data_loss;
+    double loss = data_loss;// + reg_loss;
 
     return make_pair(probs, loss);
 }

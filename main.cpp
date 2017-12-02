@@ -381,23 +381,30 @@ int main(int argc, char** argv) {
         get_all_label(mnist_dataset.test_labels),
         2, // ensemble size
         1e-4, // learning rate
-        8, // batch size
+        16, // batch size
         {
-            //"conv2d 2 3 1 28 28 1 0",
+            //"conv2d 1 3 1 28 28 1 0",
             //"dense 50 1352",
-            "dense 100 784",
+            "dense 300 784",
+            //"dense 100 676",
             //"leaky .00001",
             "relu",
-            "dense 50 100",
+            "dropout .5",
+            "dense 10 300",
+            //"relu",
+            //"dense 50 100",
             //"leaky .00001",
-            "relu",
+            //"relu",
+            //"dense 50 100",
+            //"leaky .00001",
+            //"relu",
             //"dropout .5",
-            "dense 10 50"
+            //"dense 10 200"
         },
         1// number of threads per network in ensemble.
     );
     auto start = std::chrono::system_clock::now();
-    conv_net.train(2, true, 1000);
+    conv_net.train(20, true, 1000);
     std::cout << conv_net.test();
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;

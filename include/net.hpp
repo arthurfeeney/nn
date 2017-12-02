@@ -196,8 +196,7 @@ public:
         }
         
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
-            d_out = layers[layer]->backward_pass(d_out);
-        
+            d_out = layers[layer]->backward_pass(d_out);        
         }
 
         if constexpr(in_rank == 3) {
@@ -296,6 +295,19 @@ public:
             *(layers_3d[layer]) /= scalar;
         } 
         return *this;
+    }
+
+    double sum_all_weights() const {
+        double sum = 0;
+        for(auto& layer : layers) {
+            for(auto& row : layer->get_weights()) {
+                for(auto& val : row) {
+                    sum += val;
+                }
+            }
+        }
+        // TODO: implement for 3d layers.
+        return sum;
     }
 };
 
