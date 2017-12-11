@@ -6,6 +6,9 @@
 * Meh, they're all pretty easy to implement anyway.
 */
 
+#ifndef AUX_HPP
+#define AUX_HPP
+
 #include <algorithm>
 #include <vector>
 #include <array>
@@ -14,12 +17,9 @@
 #include <iostream>
 #include <type_traits>
 
-#ifndef AUX_HPP
-#define AUX_HPP
-
 namespace aux {
 
-    // type trait to find rank of a container.
+    // type function to find rank of a container.
     // doesn't work on things that aren't containers.
     template<class T, size_t N = 1>
     struct type_rank : public 
@@ -32,25 +32,22 @@ namespace aux {
         >::type
     {};
 
-    template<typename T>
-    constexpr size_t depth_helper(T thing, size_t d) {
-        if constexpr(std::is_fundamental<typename std::remove_reference<T>::type>::value) {
-            return d;
+    template<typename Matrix, typename Scalar>
+    Matrix scale_mat(const Matrix& m, Scalar s) {
+        Matrix m_copy(m);
+        for(auto& row : m_copy) {
+            for(auto& val : row) {
+                val *= s;
+            }
         }
-        else {
-            using subtype = typename T::value_type;
-            return depth_helper<subtype>(subtype(), d + 1);
-        }
+        return m_copy;
     }
 
-    // Works on non-containers, but can't be used as a template parameter :( darn.
-    template<typename T>
-    constexpr size_t depth(T thing) {
-        return depth_helper(thing, 0);
-    }
 
     template<typename Matrix>
-    Matrix splice(const Matrix& m, size_t start_row, size_t start_col, size_t size) {
+    Matrix splice(const Matrix& m, size_t start_row, size_t start_col, 
+                  size_t size) 
+    {
         Matrix out(size, std::vector<double>(size, 0));
         for(size_t row = 0; row < size; ++row) {
             for(size_t col = 0; col < size; ++col) {
@@ -171,13 +168,30 @@ namespace aux {
         if(m1.size() != m2.size() || m1[0].size() != m2[0].size()) {
             throw("matrix dimension not equal.");
         }
-        Matrix summed(m1.size(), std::vector<double>(m1[0].size(), 0));
+        using sub_type = typename Matrix::value_type;
+        Matrix summed(m1.size(), sub_type(m1[0].size(), 0));
         for(size_t row = 0; row < m1.size(); ++row) {
             for(size_t col = 0; col < m1[0].size(); ++col) {
                 summed[row][col] = m1[row][col] + m2[row][col];
             }
         }
         return summed;
+    }
+
+    template<typename Matrix>
+    auto matsub(const Matrix& m1, const Matrix& m2) -> Matrix
+    {
+        if(m1.size() != m2.size() || m1[0].size() != m2[0].size()) {
+            throw("matrix dimension not equal.");
+        }
+        using sub_type = typename Matrix::value_type;
+        Matrix sub(m1.size(), sub_type(m1[0].size(), 0));
+        for(size_t row = 0; row < m1.size(); ++row) {
+            for(size_t col = 0; col < m1[0].size(); ++col) {
+                sub[row][col] = m1[row][col] - m2[row][col];
+            }
+        }
+        return sub;
     }
 
     template<typename Weight = double>

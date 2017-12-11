@@ -11,6 +11,8 @@
 #include "include/ensemble.hpp"
 #include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
 #include "include/conv2d.hpp"
+#include "include/nesterov.hpp"
+#include "include/SGD.hpp"
 
 using std::vector;
 using std::make_unique;
@@ -253,7 +255,7 @@ int main(int argc, char** argv) {
 
     auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
         (   // mnist data location.
-            "/home/afeeney/pet/net/mnist_data/mnist/");
+            "/home/afeeney/nn/mnist_data/mnist/");
 
 /*
     Net<double> simp_mnist_net(
@@ -369,9 +371,21 @@ int main(int argc, char** argv) {
     //live.forward_pass(data_to_im(mnist_dataset.training_images, 28, 28)[0]);
     
 
-    Ensemble<vector<vector<double>>,
-             vector<vector<double>>,
-             double> conv_net 
+    if(argc != 3) {
+        std::cout << "need two arguments!" << '\n';
+        return 1;
+    }
+    std::string es(argv[1]);
+    std::string nt(argv[2]);
+
+    int ensemble_size = std::stoi(es, 0, 10);
+    int n_threads = std::stoi(nt, 0, 10);
+
+    Ensemble<vector<vector<double>>, 
+             vector<vector<double>>, 
+             SGD, //NesterovMomentum<9, 10, 128>,
+             double> 
+    net 
     (
         //data_to_im(mnist_dataset.training_images, 28, 28),
         get_all_data(mnist_dataset.training_images),
@@ -379,37 +393,31 @@ int main(int argc, char** argv) {
         //data_to_im(mnist_dataset.test_images, 28, 28),
         get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
-        2, // ensemble size
-        1e-4, // learning rate
-        16, // batch size
+        ensemble_size, // ensemble size
+        1e-3, // learning rate
+        128, // batch size
         {
             //"conv2d 1 3 1 28 28 1 0",
-            //"dense 50 1352",
-            "dense 300 784",
-            //"dense 100 676",
-            //"leaky .00001",
+            "dense 1024 784",
+            "relu",
+            "dense 1024 1024",
+            "relu",
+            "dense 1024 1024",
             "relu",
             "dropout .5",
-            "dense 10 300",
-            //"relu",
-            //"dense 50 100",
-            //"leaky .00001",
-            //"relu",
-            //"dense 50 100",
-            //"leaky .00001",
-            //"relu",
-            //"dropout .5",
-            //"dense 10 200"
+            "dense 10 1024"
         },
-        1// number of threads per network in ensemble.
+        n_threads// number of threads per network in ensemble.
+        //5000 // validation set size. if using, should preshuffle train
     );
     auto start = std::chrono::system_clock::now();
-    conv_net.train(20, true, 1000);
-    std::cout << conv_net.test();
+    net.train(60, true, 1000);
     auto end = std::chrono::system_clock::now();
+    std::cout << "Final acc: " << net.test() << '\n';
+    std::cout << "Ensemble size: " << ensemble_size << '\n';
+    std::cout << "Threads per network: " << n_threads << '\n';
     std::chrono::duration<double> elapsed_seconds = end - start;
     std::cout << '\n' << "time: " << elapsed_seconds.count() << '\n';
-    
     /*
     Conv2d<double> live(4, 3, 1, 4, 4, 4, 0, 1e-4);
     

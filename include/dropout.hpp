@@ -51,8 +51,9 @@ public:
         Matrix mask(input.size(), std::vector<Weight>(input[0].size(), 0));
         // generate mask of bernoulli variables. Scale by the keep_prob.
         for(size_t row = 0; row < mask.size(); ++row) {
-            std::fill(mask[row].begin(), mask[row].end(), 
-                      static_cast<Weight>(keep()) / keep_prob);
+            for(size_t col = 0; col < mask[0].size(); ++col) {
+                mask[row][col] = static_cast<Weight>(keep()) / keep_prob;
+            }
         }
         for(size_t row = 0; row < input.size(); ++row) {
             for(size_t col = 0; col < input[0].size(); ++col) {
@@ -74,10 +75,11 @@ public:
         Matrix dropped(input.size(), std::vector<Weight>(input[0].size(), 0));
         Matrix mask(input.size(), std::vector<Weight>(input[0].size(), 0));
         for(size_t row = 0; row < mask.size(); ++row) {
-            std::fill(mask[row].begin(), mask[row].end(), 
-                      static_cast<Weight>(keep()) / keep_prob);
+            for(size_t col = 0; col < mask[0].size(); ++col) {
+                mask[row][col] = static_cast<Weight>(keep()) / keep_prob;
+            }
         } 
-        auto rows = thread_alg::split_indices(input.size(), n_threads);
+        auto rows = thread_alg::split_indices(dropped.size(), n_threads);
         std::vector<std::thread> threads;
         for(size_t thread = 0; thread < n_threads; ++thread) {
             threads.emplace_back(&Dropout2d::async_apply_drop,
@@ -89,6 +91,7 @@ public:
         for(auto& thread : threads) {
             thread.join();
         }
+        this->last_output = dropped;
         return dropped;
     }
 
@@ -104,6 +107,10 @@ public:
             }
         }
         return d_input;
+    }
+
+    Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
+        return backward_pass(d_out);
     }
 
 private:

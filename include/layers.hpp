@@ -1,4 +1,7 @@
 
+#ifndef LAYERS_HPP
+#define LAYERS_HPP
+
 #include <algorithm>
 #include <vector>
 #include <utility>
@@ -7,9 +10,6 @@
 
 #include "aux.hpp"
 #include "loss.hpp"
-
-#ifndef LAYERS_HPP
-#define LAYERS_HPP
 
 template <typename Weight = double>
 class Layer_2D {
@@ -97,6 +97,8 @@ public:
 
     virtual Matrix backward_pass(const Matrix& input) = 0;
 
+    virtual Matrix async_backward_pass(const Matrix& input, size_t nt) = 0;
+
     virtual Matrix operator()(const Matrix& input) = 0;
 
     virtual Layer_2D* clone() = 0;
@@ -162,7 +164,9 @@ struct Loss_Cross_Entropy {
 
     // functor, no need for constructor!
     Matrix forward_pass(const Matrix& scores, const Matrix& actual) {
-        return loss(scores, actual).first;
+        auto probs_and_loss = loss(scores, actual);
+        most_recent_loss = probs_and_loss.second;
+        return probs_and_loss.first;
     }
 
     Matrix operator()(const Matrix& scores, const Matrix& actual) {
@@ -178,6 +182,12 @@ struct Loss_Cross_Entropy {
         Matrix d_loss = backward_pass(probs, actual);
         return d_loss;
     }
+
+    double get_loss() const {
+        return most_recent_loss;
+    }
+private:
+    double most_recent_loss = 0;
 };
 
 // very incomplete. Can't do regression rn. :(

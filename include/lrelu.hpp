@@ -38,8 +38,9 @@ public:
     }
 
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
-        // need to implememt.
-        return Matrix();
+        this->last_input = input;
+        this->last_output = async_lrelu(input, n_threads);
+        return this->last_output;
     }
 
     Matrix operator()(const Matrix& input) {
@@ -60,6 +61,37 @@ public:
         }
         return d_input;
     }
+
+    Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
+        Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
+        
+        auto rows = thread_alg::split_indices(d_out.size(), n_threads);
+        std::vector<std::thread> threads;
+        for(size_t thread = 0; thread < n_threads; ++thread) {
+            threads.emplace_back(
+            [](std::vector<int>& indices,
+                const Matrix& o,
+                const Matrix& last_i,
+                Matrix& i,
+                double s) {
+                for(auto& index : indices) {
+                    for(size_t col = 0; col < o[0].size(); ++col) {
+                        Weight val = last_i[index][col];
+                        i[index][col] = val >= 0 ? o[index][col] : s;
+                    }
+                }
+            },
+            std::ref(rows[thread]),
+            std::ref(d_out),
+            std::ref(this->last_input),
+            std::ref(d_input),
+            scale);
+        }
+        for(auto& thread : threads) {
+            thread.join();
+        }
+        return d_input;   
+    }
 private:
 
     double scale = 0.01;
@@ -73,6 +105,35 @@ private:
             }
         }
         return leaky_relud;
+    }
+
+    static void lrelu_thread_task(std::vector<int>& indices, 
+                                 const Matrix& A,
+                                 Matrix& B,
+                                 double s) 
+    {
+        for(const auto& index : indices) {
+            for(size_t i = 0; i < A[0].size(); ++i) {
+                B[index][i] = A[index][i] >= 0 ? A[index][i] : s * A[index][i];
+            }
+        }
+    }
+
+    Matrix async_lrelu(const Matrix& A, size_t n_threads) {
+        Matrix B(A.size(), std::vector<Weight>(A[0].size()));
+        auto rows = thread_alg::split_indices(A.size(), n_threads);
+        std::vector<std::thread> threads;
+        for(size_t thread = 0; thread < n_threads; ++thread) {
+            threads.emplace_back(&LRelu::lrelu_thread_task,
+                                 std::ref(rows[thread]),
+                                 std::ref(A),
+                                 std::ref(B),
+                                 scale);
+        }
+        for(auto& thread : threads) {
+            thread.join();
+        }
+        return B;
     }
 };
 

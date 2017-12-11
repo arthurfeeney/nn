@@ -1,36 +1,38 @@
 
+#ifndef DENSE_HPP
+#define DENSE_HPP
+
 #include <algorithm>
 #include <vector>
 #include <utility>
 #include <string>
 #include <tuple>
 #include <memory>
+#include <cmath>
 
 #include "aux.hpp"
 #include "thread_aux.hpp"
 #include "layers.hpp"
 
-#ifndef DENSE_HPP
-#define DENSE_HPP
-
-
-/*
- * make it so that the range of initial values can (optionally?) be passed in
- */
-
-template <typename Weight = double>
+template <typename Opt, typename Weight = double>
 struct Dense : public Layer_2D<Weight> {
+private:
+    Opt optimizer;
+public:
     using Matrix = std::vector<std::vector<Weight>>;
     using Image = std::vector<Matrix>;
 
     Dense():Layer_2D<Weight>("dense") {}
-    // constructor sets size and default values of weights.
     Dense(int num_nodes, int input_size, double learning_rate):
-        Layer_2D<Weight>(num_nodes, input_size, "dense", learning_rate)
+        Layer_2D<Weight>(num_nodes, input_size, "dense", learning_rate),
+        optimizer(input_size, num_nodes)
     {
+        // some form of uniform xavier intialization.
+        double v = std::sqrt(3.0 / input_size);
+        std::cout << v << '\n';
         for(auto& row : this->weights) {
             for(auto& item : row) {
-                item = aux::gen_double(-0.1, 0.1);
+                item = aux::gen_double(-v, v);
             }
         }
     }
@@ -47,10 +49,9 @@ struct Dense : public Layer_2D<Weight> {
 
     Matrix forward_pass(const Matrix& input) {
         // computes output of a layer based on input and its weights.
-        // input is 1xK (a one by I matrix).
+        // input is bxK. b is batch size K is size of datum.
         this->last_input = input;
-        // b is the batch_size
-        // produces a 1xN matrix. From bxK, KxN
+        // produces a bxN matrix. From bxK, KxN
         Matrix apply_weights = aux::matmul(input, this->weights);
         // adds bias to 1xN matrix
         Matrix apply_bias = apply_weights;
@@ -74,9 +75,14 @@ struct Dense : public Layer_2D<Weight> {
         this->last_input = input;
         Matrix apply_weights = thread_alg::matmul(input, this->weights,
                                                   n_threads);
-        Matrix apply_bias = aux::matadd(apply_weights, this->bias);
+        Matrix apply_bias = apply_weights;
+        for(size_t b = 0; b < apply_bias.size(); ++b) {
+            for(size_t v = 0; v < this->bias[0].size(); ++v) {
+                apply_bias[b][v] += this->bias[0][v];
+            }
+        }
         this->last_output = apply_bias;
-        return apply_bias; //returns the scores
+        return apply_bias;
     }
 
     Matrix operator()(const Matrix& input) {
@@ -98,10 +104,11 @@ struct Dense : public Layer_2D<Weight> {
 
         auto d_weights = aux::matmul(aux::transpose(this->last_input), d_out);
 
+        auto step = optimizer.perform(d_weights, this->step_size);
+
         for(size_t row = 0; row < this->weights.size(); ++row) {
             for(size_t col = 0; col < this->weights[0].size(); ++col) {
-                this->weights[row][col] += -this->step_size *
-                                            d_weights[row][col];
+                this->weights[row][col] += step[row][col];
             }
         }
 
@@ -119,6 +126,34 @@ struct Dense : public Layer_2D<Weight> {
         }
 
         return d_input; // used for next layer.
+    }
+
+    Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
+        auto d_input = thread_alg::matmul(d_out, aux::transpose(this->weights),
+                                          n_threads);
+
+        auto d_weights = thread_alg::matmul(aux::transpose(this->last_input),
+                                            d_out, n_threads);
+
+        for(size_t row = 0; row < this->weights.size(); ++row) {
+            for(size_t col = 0; col < this->weights[0].size(); ++col) {
+                this->weights[row][col] += -this->step_size *
+                                            d_weights[row][col];
+            }
+        }
+
+        std::vector<Weight> d_bias(this->bias[0].size(), 0.0);
+        for(size_t row = 0; row < d_out.size(); ++row) {
+            for(size_t col = 0; col < d_out[0].size(); ++col) {
+                d_bias[col] += d_out[row][col];
+            }
+        }
+
+        for(size_t row = 0; row < this->bias[0].size(); ++row) {
+            this->bias[0][row] += -this->step_size * d_bias[row];
+        }
+
+        return d_input;
     }
 
     size_t layer_size() const {

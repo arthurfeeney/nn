@@ -37,7 +37,8 @@ public:
 
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
         this->last_input = input;
-        return async_relu(input, n_threads);
+        this->last_output = async_relu(input, n_threads);
+        return this->last_output;
     }
 
     Matrix operator()(const Matrix& input) {
@@ -57,6 +58,36 @@ public:
         }
         return d_input;
     }
+
+    Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
+        Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
+        
+        auto rows = thread_alg::split_indices(d_out.size(), n_threads);
+        std::vector<std::thread> threads;
+        for(size_t thread = 0; thread < n_threads; ++thread) {
+            threads.emplace_back(
+            [](std::vector<int>& indices,
+                const Matrix& o,
+                const Matrix& last_i,
+                Matrix& i) {
+                for(auto& index : indices) {
+                    for(size_t col = 0; col < o[0].size(); ++col) {
+                        Weight val = last_i[index][col];
+                        i[index][col] = val >= 0 ? o[index][col] : 0;
+                    }
+                }
+            },
+            std::ref(rows[thread]),
+            std::ref(d_out),
+            std::ref(this->last_input),
+            std::ref(d_input));
+        }
+        for(auto& thread : threads) {
+            thread.join();
+        }
+        return d_input;   
+    }
+
 private:
     Matrix relu(const Matrix& c) { 
         Matrix relud_c(c.size(), std::vector<Weight>(c[0].size()));
@@ -74,15 +105,15 @@ private:
                                  Matrix& B) 
     {
         for(const auto& index : indices) {
-            for(size_t i = 0; i < A.size(); ++i) {
-                B[i][index] = std::max<double>(A[i][index], 0);
+            for(size_t i = 0; i < A[0].size(); ++i) {
+                B[index][i] = std::max<double>(A[index][i], 0);
             }
         }
     }
 
     Matrix async_relu(const Matrix& A, size_t n_threads) {
         Matrix B(A.size(), std::vector<Weight>(A[0].size()));
-        auto rows = thread_alg::split_indices(A[0].size(), n_threads);
+        auto rows = thread_alg::split_indices(A.size(), n_threads);
         std::vector<std::thread> threads;
         for(size_t thread = 0; thread < n_threads; ++thread) {
             threads.emplace_back(&Relu::relu_thread_task,

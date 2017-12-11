@@ -1,4 +1,7 @@
 
+#ifndef NET_HPP
+#define NET_HPP
+
 #include <algorithm>
 #include <vector>
 #include <utility>
@@ -17,12 +20,10 @@
 #include "conv2d.hpp"
 #include "dropout.hpp"
 #include "lrelu.hpp"
-
-#ifndef NET_HPP
-#define NET_HPP
+#include "prelu.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
-         typename Weight = double>
+         typename Opt, typename Weight = double>
 class Net {
 private:
 
@@ -109,7 +110,8 @@ public:
             if(split_layer_string[0] == "dense") {
                 layers.push_back(
                     std::unique_ptr<Layer_2D<Weight>>(
-                        new Dense<Weight>(std::stoi(split_layer_string[1]),
+                        new Dense<Opt, Weight>(
+                                          std::stoi(split_layer_string[1]),
                                           std::stoi(split_layer_string[2]),
                                           learning_rate)
                         ));
@@ -196,7 +198,9 @@ public:
         }
         
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
-            d_out = layers[layer]->backward_pass(d_out);        
+            d_out = n_threads > 1 ? 
+                        layers[layer]->async_backward_pass(d_out, n_threads) :
+                        layers[layer]->backward_pass(d_out);        
         }
 
         if constexpr(in_rank == 3) {
@@ -246,12 +250,6 @@ public:
             trans = n_threads > 1 ?
                         layer->async_forward_pass(input, n_threads) :
                         layer->forward_pass(trans);
-            /*for(auto& row : trans) {
-                for(auto& val : row) {
-                    std::cout << val << ' ';
-                }
-                std::cout << '\n';
-            }*/
         }
         return trans;
     }
@@ -274,9 +272,15 @@ public:
     
         return guess_index == label_index;
     }
+
+    double comp_loss(In input, Out label, size_t n_threads = 1) {
+        Out guess = predict(input, false, n_threads);
+        loss.forward_pass(guess, label);
+        return loss.get_loss();
+    }
     
-    Net<In, in_rank, Out, out_rank, Weight>& 
-    operator+=(const Net<In, in_rank, Out, out_rank, Weight>& other) 
+    Net<In, in_rank, Out, out_rank, Opt, Weight>& 
+    operator+=(const Net<In, in_rank, Out, out_rank, Opt, Weight>& other) 
     {
         for(size_t layer = 0; layer < layers.size(); ++layer) {
             *(layers[layer]) += *(other.layers[layer]);
@@ -287,7 +291,9 @@ public:
         return *this;
     }
 
-    Net<In, in_rank, Out, out_rank, Weight>& operator/=(const size_t scalar) {
+    Net<In, in_rank, Out, out_rank, Opt, Weight>& 
+    operator/=(const size_t scalar) 
+    {
         for(size_t layer = 0; layer < layers.size(); ++layer) {
             *(layers[layer]) /= scalar;
         }
