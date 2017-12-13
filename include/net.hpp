@@ -72,7 +72,6 @@ public:
         return *this;
     }
 
-    // WILL NEED TO UPDATE FOR 3D layers.
     Net(const Net& other):
         layers(),
         layers_3d(),
@@ -92,6 +91,8 @@ public:
         }
     }
 
+    // construct network given input string and learning rate.
+    // parses input to to generate layers and put in the layers vector.
     Net(double learning_rate, const std::initializer_list<std::string>& input)
     {
         for(auto iter = input.begin(); iter != input.end(); ++iter) {
@@ -142,9 +143,11 @@ public:
                             std::stod(split_layer_string[1], nullptr)
                         )));
             }
+            // constructs leaky ReLU.
             else if(split_layer_string[0] == "leaky" || 
                     split_layer_string[0] == "lrelu") 
             {
+                // if scale is not specified, it defaults to 0.01.
                 if(split_layer_string.size() == 1) {
                     layers.push_back(
                         std::unique_ptr<Layer_2D<Weight>>(
@@ -152,6 +155,7 @@ public:
                         )
                     );
                 }
+                // constructs the layer with the scale specified. 
                 else {
                     double scale = std::stod(split_layer_string[1], nullptr);
                     layers.push_back(
@@ -164,7 +168,7 @@ public:
         }
     }
 
-
+    // updates the network for a single input.
     void update(const In& input, const Out& label) {
         Out&& prediction = predict(input, true);
         Out&& dloss = loss.comp_d_loss(prediction, label);
@@ -174,10 +178,12 @@ public:
         }
     }
 
+    // updates the network given a batch of inputs (possibly only 1).
     void batch_update(const std::vector<In>& inputs, 
                       const std::vector<Out>& labels,
                       const size_t n_threads = 1) 
     {
+        // compute the loss.
         const size_t batch_size = inputs.size();
 
         In input(batch_size);
@@ -197,12 +203,14 @@ public:
             }
         }
         
+        // apply backward pass to each layer iteratively to update.
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
             d_out = n_threads > 1 ? 
                         layers[layer]->async_backward_pass(d_out, n_threads) :
                         layers[layer]->backward_pass(d_out);        
         }
 
+        // update 3d layers if they exist.
         if constexpr(in_rank == 3) {
             std::tuple<int, int, int> dims = 
                 layers_3d[layers_3d.size() - 1]->proper_output_dim();
@@ -219,9 +227,9 @@ public:
         }
     }
 
-    // need to do something about intermediate variables not being In or Out...
-
+    // compute output for given input.
     Out predict(In input, bool training, const size_t n_threads) {
+        // if 3d layers exist, process them first.
         if constexpr (in_rank == 3) {
             auto prediction_3d = predict_3d(input, training, n_threads);
             auto flattened = aux::flatten_3d(prediction_3d);
@@ -279,6 +287,7 @@ public:
         return loss.get_loss();
     }
     
+    // used for averaging the networks. element-wise sum of all weights.
     Net<In, in_rank, Out, out_rank, Opt, Weight>& 
     operator+=(const Net<In, in_rank, Out, out_rank, Opt, Weight>& other) 
     {
@@ -291,6 +300,7 @@ public:
         return *this;
     }
 
+    // used for averaging the networks. divides all weights by scalar.
     Net<In, in_rank, Out, out_rank, Opt, Weight>& 
     operator/=(const size_t scalar) 
     {
@@ -303,6 +313,7 @@ public:
         return *this;
     }
 
+    // adds up every weight in the network.
     double sum_all_weights() const {
         double sum = 0;
         for(auto& layer : layers) {

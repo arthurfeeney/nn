@@ -253,9 +253,6 @@ int main(int argc, char** argv) {
 */
 
 
-    auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
-        (   // mnist data location.
-            "/home/afeeney/nn/mnist_data/mnist/");
 
 /*
     Net<double> simp_mnist_net(
@@ -370,6 +367,10 @@ int main(int argc, char** argv) {
     //Conv2d<double> live(4, 3, 1, 28, 28, 1, 1, 1e-3);
     //live.forward_pass(data_to_im(mnist_dataset.training_images, 28, 28)[0]);
     
+    auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
+        (   // mnist data location.
+            "/users/afeeney/Pet/nn/mnist_data/mnist/"
+        );
 
     if(argc != 3) {
         std::cout << "need two arguments!" << '\n';
@@ -398,26 +399,39 @@ int main(int argc, char** argv) {
         128, // batch size
         {
             //"conv2d 1 3 1 28 28 1 0",
-            "dense 1024 784",
+            /*
+            "dense 300 784",
             "relu",
-            "dense 1024 1024",
-            "relu",
-            "dense 1024 1024",
-            "relu",
-            "dropout .5",
-            "dense 10 1024"
+            "dense 10 300",
+            */
+            "dense 1000 784",
+        //    "relu",
+            "dense 1000 1000",
+        //    "relu",
+            "dense 1000 1000",
+        //    "relu",
+            "dense 10 1000"
+                
         },
         n_threads// number of threads per network in ensemble.
-        //5000 // validation set size. if using, should preshuffle train
+        //5000 // validation set size. if using, should preshuffle train data.
     );
     auto start = std::chrono::system_clock::now();
-    net.train(60, true, 1000);
+    net.train(0, true, 1000);
     auto end = std::chrono::system_clock::now();
-    std::cout << "Final acc: " << net.test() << '\n';
+
+    auto start2 = std::chrono::system_clock::now();
+    double test_acc = net.test();
+    auto end2 = std::chrono::system_clock::now();
+
+
+    std::cout << "Final acc: " << test_acc << '\n';
     std::cout << "Ensemble size: " << ensemble_size << '\n';
     std::cout << "Threads per network: " << n_threads << '\n';
     std::chrono::duration<double> elapsed_seconds = end - start;
     std::cout << '\n' << "time: " << elapsed_seconds.count() << '\n';
+    std::chrono::duration<double> test_time = end2 - start2;
+    std::cout << '\n' << "time: " << test_time.count() << '\n';
     /*
     Conv2d<double> live(4, 3, 1, 4, 4, 4, 0, 1e-4);
     

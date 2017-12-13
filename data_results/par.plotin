@@ -1,0 +1,15 @@
+set title "Neural Network Ensemble Training Times."
+set output "nn_perf.png"
+set terminal png
+set style data linespoints
+#uncomment if you like
+#set logscale  y
+set xlabel "Number of UEs per network."
+set ylabel "Training Time"
+plot \
+  "e1_perf.dat" title "One Network", \
+  "e2_perf.dat" title "Two Networks", \
+  "e4_perf.dat" title "Four Networks", \
+  "e8_perf.dat" title "Eight Networks", \
+  
+

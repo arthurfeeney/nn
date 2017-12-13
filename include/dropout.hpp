@@ -67,6 +67,8 @@ public:
     }
 
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
+        // same as forward_pass but splits up the indices of the outer
+        // for loop when doing element wise product with the mask. 
         this->last_input = input;
         if(!this->is_training) {
             this->last_output = input;
@@ -100,6 +102,7 @@ public:
     }
 
     Matrix backward_pass(const Matrix& d_out) {
+        // easy! just d_out times the mask. 
         Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size(), 0)); 
         for(size_t i = 0; i < d_out.size(); ++i) {
             for(size_t j = 0; j < d_out[0].size(); ++j) {
@@ -114,12 +117,13 @@ public:
     }
 
 private:
-    double keep_prob;
+    double keep_prob; // the probability of keeping the node. 
     
     bool keep() {
-        return aux::gen_double(0, 1) <= keep_prob;
+        return aux::gen_double(0, 1) <= keep_prob; // keep if less then prob.
     }
 
+    // splits the outer for loops indices.
     static void async_apply_drop(std::vector<int>& rows,
                                  const Matrix& mask,
                                  const Matrix& input,

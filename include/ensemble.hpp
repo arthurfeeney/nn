@@ -83,7 +83,7 @@ public:
             }
 
             std::vector<std::thread> threads;
-            
+            // train each network on its own cluster of threads for one epoch.
             for(size_t net = 0; net < ensemble_size; ++net) {
                 threads.emplace_back(
                             &Ensemble::run_epoch,
@@ -104,14 +104,16 @@ public:
             average_ensemble();
             
             if(manager.validation_size() > 0) {
+                // ONLY USED IF THERE IS A VALIDATION SET.
                 // validate modifies prev_error.
                 // if the change in loss is within threshold, stop training 
                 if(!validate(0.00001, prev_error)) break; 
-                //if(!validate(0.00001, prev_error)) break; 
             }
         }
     }
 
+    // tests the quality of the network on the test set.
+    // returns the percent it got correct.
     double test() {
         Net<In, InRank::value, Out, OutRank::value, Opt, Weight> 
             test_net = get_test_net();
@@ -166,7 +168,8 @@ private:
         LabelCont chunk_labels = chunk.second;
         net.batch_update(chunk_data, chunk_labels); 
     }
-
+    
+    // trains a network on the entire dataset one time.
     static void 
     run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
               Net<In, InRank::value, Out, OutRank::value, Opt, Weight>& net,

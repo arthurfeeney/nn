@@ -70,6 +70,8 @@ public:
         return apply_bias; //returns the scores
     }
 
+    // parallel version of forward_pass. Only difference is it
+    // uses the parallel matmul implementation. In thread_aux.hpp
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
         
         this->last_input = input;
@@ -156,6 +158,7 @@ public:
         return d_input;
     }
 
+    // some helper functions.
     size_t layer_size() const {
         return this->size;
     }

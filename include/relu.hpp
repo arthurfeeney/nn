@@ -60,27 +60,30 @@ public:
     }
 
     Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
+        // same as backwad_pass, but it splits up the indices in the 
+        // outer for loop so each thread gets its own set of indices
+        // to go over.
         Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
         
         auto rows = thread_alg::split_indices(d_out.size(), n_threads);
         std::vector<std::thread> threads;
         for(size_t thread = 0; thread < n_threads; ++thread) {
             threads.emplace_back(
-            [](std::vector<int>& indices,
-                const Matrix& o,
-                const Matrix& last_i,
-                Matrix& i) {
-                for(auto& index : indices) {
-                    for(size_t col = 0; col < o[0].size(); ++col) {
-                        Weight val = last_i[index][col];
-                        i[index][col] = val >= 0 ? o[index][col] : 0;
+                [](std::vector<int>& indices,
+                    const Matrix& o,
+                    const Matrix& last_i,
+                    Matrix& i) {
+                    for(auto& index : indices) {
+                        for(size_t col = 0; col < o[0].size(); ++col) {
+                            Weight val = last_i[index][col];
+                            i[index][col] = val >= 0 ? o[index][col] : 0;
+                        }
                     }
-                }
-            },
-            std::ref(rows[thread]),
-            std::ref(d_out),
-            std::ref(this->last_input),
-            std::ref(d_input));
+                },
+                std::ref(rows[thread]),
+                std::ref(d_out),
+                std::ref(this->last_input),
+                std::ref(d_input));
         }
         for(auto& thread : threads) {
             thread.join();

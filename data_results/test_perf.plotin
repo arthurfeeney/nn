@@ -1,0 +1,11 @@
+set title "Neural Network Ensemble Test Times."
+set output "nn_test_perf.png"
+set terminal png
+set style data linespoints
+#uncomment if you like
+#set logscale  y
+set xlabel "Number of UEs."
+set ylabel "Test Time"
+plot \
+  "test_time.dat" title "One Network", \
+

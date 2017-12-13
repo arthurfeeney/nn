@@ -11,6 +11,11 @@
 #ifndef LRELU_HPP
 #define LRELU_HPP
 
+/*
+ * Basically the exact same as ReLu (relu.hpp). Only it applies
+ *  n > 0 ? n : scale * n.
+ */
+
 template <typename Weight = double>
 class LRelu : public Layer_2D<Weight> {
 public:
@@ -63,6 +68,10 @@ public:
     }
 
     Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
+        /*
+         * just splits up the indices of the outer for loop. Gives each 
+         * thread a different set of indices to go over.
+         */
         Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
         
         auto rows = thread_alg::split_indices(d_out.size(), n_threads);
@@ -98,6 +107,8 @@ private:
 
     Matrix leaky_relu(const Matrix& c) { 
         // apply leaky relu to container, return leaky relud container.
+        // if n >= 0, return n
+        // else return scale * n;
         Matrix leaky_relud(c.size(), std::vector<Weight>(c[0].size()));
         for(size_t i = 0; i < c.size(); ++i) {
             for(size_t j = 0; j < c[0].size(); ++j) {

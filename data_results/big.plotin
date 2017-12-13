@@ -1,0 +1,11 @@
+set title "Big network Ensemble Training Times over 60 epochs."
+set output "nn_big.png"
+set terminal png
+set style data linespoints
+#uncomment if you like
+#set logscale  y
+set xlabel "Number of UEs per network."
+set ylabel "Training Time"
+plot \
+  "big_e1.dat" title "One Network", \
+  "big_e2.dat" title "Two Networks", \

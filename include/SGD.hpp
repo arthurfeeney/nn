@@ -4,6 +4,10 @@
 
 #include "aux.hpp"
 
+/*
+ * Stochastic Gradient Descent for updating networks.
+ */
+
 struct SGD {
     SGD() {}
     SGD(size_t height, size_t width) {}

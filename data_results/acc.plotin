@@ -1,0 +1,15 @@
+set title "Neural Network Ensemble Test Accuracy."
+set output "nn_acc.png"
+set terminal png
+set style data linespoints
+#uncomment if you like
+#set logscale  y
+set xlabel "Number of UEs per network."
+set ylabel "Percent Accuracy On Test Data."
+plot \
+  "e1_acc.dat" title "One Network", \
+  "e2_acc.dat" title "Two Networks", \
+  "e4_acc.dat" title "Four Networks", \
+  "e8_acc.dat" title "Eight Networks", \
+  
+
