@@ -25,7 +25,7 @@ public:
     Dense():Layer_2D<Weight>("dense") {}
     Dense(int num_nodes, int input_size, double learning_rate):
         Layer_2D<Weight>(num_nodes, input_size, "dense", learning_rate),
-        optimizer(input_size, num_nodes)
+        optimizer()
     {
         // some form of uniform xavier intialization.
         double v = std::sqrt(3.0 / input_size);
@@ -106,13 +106,15 @@ public:
 
         auto d_weights = aux::matmul(aux::transpose(this->last_input), d_out);
 
+        /*
         auto step = optimizer.perform(d_weights, this->step_size);
 
         for(size_t row = 0; row < this->weights.size(); ++row) {
             for(size_t col = 0; col < this->weights[0].size(); ++col) {
                 this->weights[row][col] += step[row][col];
             }
-        }
+        }*/
+        optimizer.perform(this->weights, d_weights, this->step_size);
 
         std::vector<Weight> d_bias(this->bias[0].size(), 0.0);
         for(size_t row = 0; row < d_out.size(); ++row) {

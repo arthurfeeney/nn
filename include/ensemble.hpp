@@ -14,7 +14,7 @@
 
 #include "net.hpp"
 #include "data_manager.hpp"
-#include "SGD.hpp"
+#include "Optimizer/SGD.hpp"
 
 template<typename In, typename Out, typename Opt = SGD, 
          typename Weight = double>

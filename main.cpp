@@ -11,8 +11,12 @@
 #include "include/ensemble.hpp"
 #include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
 #include "include/conv2d.hpp"
-#include "include/nesterov.hpp"
-#include "include/SGD.hpp"
+#include "include/Optimizer/nesterov.hpp"
+#include "include/Optimizer/SGD.hpp"
+#include "include/Optimizer/momentum.hpp"
+#include "include/Optimizer/adagrad.hpp"
+#include "include/Optimizer/rmsprop.hpp"
+#include "include/Optimizer/adam.hpp"
 
 using std::vector;
 using std::make_unique;
@@ -369,7 +373,7 @@ int main(int argc, char** argv) {
     
     auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
         (   // mnist data location.
-            "/users/afeeney/Pet/nn/mnist_data/mnist/"
+            "/home/afeeney/pet/net/mnist_data/mnist/"
         );
 
     if(argc != 3) {
@@ -384,7 +388,7 @@ int main(int argc, char** argv) {
 
     Ensemble<vector<vector<double>>, 
              vector<vector<double>>, 
-             SGD, //NesterovMomentum<9, 10, 128>,
+             Adam<>, //RMSProp<1, 100000, 9, 10>,
              double> 
     net 
     (
@@ -395,8 +399,8 @@ int main(int argc, char** argv) {
         get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         ensemble_size, // ensemble size
-        1e-3, // learning rate
-        128, // batch size
+        1e-4, // learning rate
+        16, // batch size
         {
             //"conv2d 1 3 1 28 28 1 0",
             /*
@@ -404,20 +408,23 @@ int main(int argc, char** argv) {
             "relu",
             "dense 10 300",
             */
-            "dense 1000 784",
+            /*"dense 1000 784",
         //    "relu",
             "dense 1000 1000",
         //    "relu",
             "dense 1000 1000",
         //    "relu",
             "dense 10 1000"
-                
+            */
+            "dense 200 784",
+            "relu",
+            "dense 10 200"
         },
         n_threads// number of threads per network in ensemble.
         //5000 // validation set size. if using, should preshuffle train data.
     );
     auto start = std::chrono::system_clock::now();
-    net.train(0, true, 1000);
+    net.train(4, true, 1000);
     auto end = std::chrono::system_clock::now();
 
     auto start2 = std::chrono::system_clock::now();
