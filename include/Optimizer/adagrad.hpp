@@ -6,7 +6,7 @@
 #include <cmath>
 #include "../aux.hpp"
 
-template<int Num, int Denom, typename Weight = double>
+template<int Num = 9, int Denom = 10, typename Weight = double>
 class Adagrad {
 private:
     std::vector<std::vector<Weight>> cache; // v is the 'velocity'

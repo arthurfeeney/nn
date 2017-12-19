@@ -1,8 +1,6 @@
 
-/*
-* in aux.hpp.
-* A loss function. Probably need to make some better ones to use...
-*/
+#ifndef LOSS_HPP
+#define LOSS_HPP
 
 #include <vector>
 #include <algorithm>
@@ -13,9 +11,6 @@
 #include <type_traits>
 
 #include "aux.hpp"
-
-#ifndef LOSS_HPP
-#define LOSS_HPP
 
 template<typename P, typename S>
 static double correct(P probs, S label) {

@@ -80,6 +80,15 @@ vector<vector<vector<double>>> get_all_data(const T& data) {
     for(size_t d = 0; d < data.size(); ++d) {
         ret[d] = conv_mnist_data(data[d]);
     }
+    // get all values in [-1, 1]
+    for(auto& matr : ret) {
+        for(auto& row : matr) {
+            for(auto& val : row) {
+                val /= 127.5;
+                val -= 1;
+            }
+        }
+    }
     return ret;
 }
 
@@ -388,7 +397,7 @@ int main(int argc, char** argv) {
 
     Ensemble<vector<vector<double>>, 
              vector<vector<double>>, 
-             Adam<>, //RMSProp<1, 100000, 9, 10>,
+             Adam<>,
              double> 
     net 
     (
@@ -399,8 +408,8 @@ int main(int argc, char** argv) {
         get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         ensemble_size, // ensemble size
-        1e-4, // learning rate
-        16, // batch size
+        1e-3, // learning rate
+        128, // batch size
         {
             //"conv2d 1 3 1 28 28 1 0",
             /*
@@ -417,8 +426,12 @@ int main(int argc, char** argv) {
             "dense 10 1000"
             */
             "dense 200 784",
-            "relu",
+            //"prelu 100",
+            "prelu 200",
+            "dense 200 200",
+            "prelu 200",
             "dense 10 200"
+            //"prelu 100",
         },
         n_threads// number of threads per network in ensemble.
         //5000 // validation set size. if using, should preshuffle train data.

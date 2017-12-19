@@ -1,3 +1,7 @@
+
+#ifndef DROPOUT_HPP
+#define DROPOUT_HPP
+
 #include <vector>
 #include <string>
 #include <random>
@@ -10,8 +14,6 @@
 #include "aux.hpp"
 #include "thread_aux.hpp"
 
-#ifndef DROPOUT_HPP
-#define DROPOUT_HPP
 
 /*
  * Have to modify during the test phase. Don't forget...

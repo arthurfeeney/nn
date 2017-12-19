@@ -1,3 +1,7 @@
+
+#ifndef DATA_MANAGER_HPP
+#define DATA_MANAGER_HPP
+
 #include <vector>
 #include <random>
 #include <utility>
@@ -155,3 +159,6 @@ private:
     size_t trs; // size of the train set
     size_t tes; // size of the test set
 };
+
+
+#endif

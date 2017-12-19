@@ -165,6 +165,15 @@ public:
                     );
                 }
             }
+            else if(split_layer_string[0] == "prelu")
+            {
+                size_t layer_size = std::stoi(split_layer_string[1]);
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new PRelu<Opt, Weight>(layer_size, learning_rate)
+                    )
+                );
+            }
         }
     }
 

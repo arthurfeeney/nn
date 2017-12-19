@@ -1,4 +1,7 @@
 
+#ifndef LAYERS_3D_HPP
+#define LAYERS_3D_HPP
+
 #include <algorithm>
 #include <vector>
 #include <utility>
@@ -6,9 +9,6 @@
 #include <tuple>
 
 #include "aux.hpp"
-
-#ifndef LAYERS_3D_HPP
-#define LAYERS_3D_HPP
 
 // base class for layers that apply 3d transformations.
 

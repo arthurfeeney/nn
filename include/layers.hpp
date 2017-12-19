@@ -36,6 +36,11 @@ protected:
 public:
     Layer_2D(std::string layer_type): layer_type(layer_type) {}
 
+    Layer_2D(std::string layer_type, double learning_rate):
+        layer_type(layer_type),
+        step_size(learning_rate)
+    {}
+
     // layer sets sizes of stuff and the name of the layer.
     Layer_2D(size_t num_nodes, size_t input_size, std::string layer_type,
              double learning_rate):

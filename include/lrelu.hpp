@@ -1,3 +1,7 @@
+
+#ifndef LRELU_HPP
+#define LRELU_HPP
+
 #include <algorithm>
 #include <vector>
 #include <utility>
@@ -8,8 +12,6 @@
 #include "aux.hpp"
 #include "layers.hpp"
 
-#ifndef LRELU_HPP
-#define LRELU_HPP
 
 /*
  * Basically the exact same as ReLu (relu.hpp). Only it applies
@@ -39,7 +41,8 @@ public:
 
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;
-        return leaky_relu(input);
+        this->last_output = leaky_relu(input);
+        return this->last_output;
     }
 
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
@@ -61,7 +64,9 @@ public:
                 // other wise keep it the same.
                 // cuz (d/dx scale*x) = scale.
                 Weight val = this->last_input[row][col];
-                d_input[row][col] = val >= 0 ? d_out[row][col] : scale;
+                d_input[row][col] = val >= 0 ? 
+                                    d_out[row][col] : 
+                                    d_out[row][col] * scale;
             }
         }
         return d_input;
@@ -86,7 +91,9 @@ public:
                 for(auto& index : indices) {
                     for(size_t col = 0; col < o[0].size(); ++col) {
                         Weight val = last_i[index][col];
-                        i[index][col] = val >= 0 ? o[index][col] : s;
+                        i[index][col] = val >= 0 ? 
+                                        o[index][col] : 
+                                        o[index][col] * s;
                     }
                 }
             },

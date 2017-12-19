@@ -6,7 +6,7 @@
 #include <cmath>
 #include "../aux.hpp"
 
-template<int DecayNum, int DecayDenom, 
+template<int DecayNum = 9, int DecayDenom = 10, 
          int EpsNum = 1, int EpsDenom = 10000000,
          typename Weight = double>
 class RMSProp {
@@ -37,7 +37,7 @@ public:
             for(size_t col = 0; col < dw[0].size(); ++col) {
                 cache[row][col] = 
                     (decay_rate * cache[row][col]) + 
-                    ((1 - decay_rate) * dw[row][col] * dw[row][col]);
+                    ((1 - decay_rate) * std::pow(dw[row][col], 2));
             }
         }
         auto tmp(cache);
@@ -47,11 +47,11 @@ public:
             }
         }
     
-        auto scale_dx = aux::scale_mat(dw, -learning_rate);
+        auto scale_dw = aux::scale_mat(dw, -learning_rate);
     
         for(size_t row = 0; row < dw.size(); ++row) {
             for(size_t col = 0; col < dw[0].size(); ++col) {
-                weights[row][col] += scale_dx[row][col] / (tmp[row][col]+eps); 
+                weights[row][col] += scale_dw[row][col] / (tmp[row][col]+eps); 
             }
         }
     }

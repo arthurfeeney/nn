@@ -1,3 +1,7 @@
+
+#ifndef RELU_HPP
+#define RELU_HPP
+
 #include <algorithm>
 #include <vector>
 #include <utility>
@@ -11,8 +15,6 @@
 #include "layers.hpp"
 #include "thread_aux.hpp"
 
-#ifndef ACTIVATION_HPP
-#define ACTIVATION_HPP
 
 template <typename Weight = double>
 class Relu : public Layer_2D<Weight> {

@@ -1,3 +1,7 @@
+
+#ifndef THREAD_AUX_HPP
+#define THREAD_AUX_HPP
+
 #include <vector>
 #include <thread>
 #include <algorithm>
@@ -5,8 +9,6 @@
 #include <type_traits>
 #include <functional>
 
-#ifndef THREAD_AUX_HPP
-#define THREAD_AUX_HPP
 
 namespace thread_alg {
 

@@ -1,3 +1,7 @@
+
+#ifndef CONV2D_HPP
+#define CONV2D_HPP
+
 #include <algorithm>
 #include <vector>
 #include <utility>
@@ -8,14 +12,11 @@
 #include "aux.hpp"
 #include "layer_3d.hpp"
 
-#ifndef CONV2D_HPP
-#define CONV2D_HPP
 
 /*
  *  Add in bias. filter[i] + bias[i];
  *  It should just be a vector.
  */
-
 
 
 template<typename Weight = double>

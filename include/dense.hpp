@@ -28,11 +28,10 @@ public:
         optimizer()
     {
         // some form of uniform xavier intialization.
-        double v = std::sqrt(3.0 / input_size);
-        std::cout << v << '\n';
+        double v = std::sqrt(6.0 / input_size);
         for(auto& row : this->weights) {
             for(auto& item : row) {
-                item = aux::gen_double(-v, v);
+                item = aux::gen_double(-0.5 * v, 0.5 * v);
             }
         }
     }
@@ -106,14 +105,6 @@ public:
 
         auto d_weights = aux::matmul(aux::transpose(this->last_input), d_out);
 
-        /*
-        auto step = optimizer.perform(d_weights, this->step_size);
-
-        for(size_t row = 0; row < this->weights.size(); ++row) {
-            for(size_t col = 0; col < this->weights[0].size(); ++col) {
-                this->weights[row][col] += step[row][col];
-            }
-        }*/
         optimizer.perform(this->weights, d_weights, this->step_size);
 
         std::vector<Weight> d_bias(this->bias[0].size(), 0.0);
@@ -139,12 +130,7 @@ public:
         auto d_weights = thread_alg::matmul(aux::transpose(this->last_input),
                                             d_out, n_threads);
 
-        for(size_t row = 0; row < this->weights.size(); ++row) {
-            for(size_t col = 0; col < this->weights[0].size(); ++col) {
-                this->weights[row][col] += -this->step_size *
-                                            d_weights[row][col];
-            }
-        }
+        optimizer.perform(this->weights, d_weights, this->step_size);
 
         std::vector<Weight> d_bias(this->bias[0].size(), 0.0);
         for(size_t row = 0; row < d_out.size(); ++row) {
