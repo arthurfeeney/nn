@@ -21,6 +21,9 @@
 #include "dropout.hpp"
 #include "lrelu.hpp"
 #include "prelu.hpp"
+#include "tanh.hpp"
+#include "sigmoid.hpp"
+#include "batch_normalization.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
          typename Opt, typename Weight = double>
@@ -171,6 +174,33 @@ public:
                 layers.push_back(
                     std::unique_ptr<Layer_2D<Weight>>(
                         new PRelu<Opt, Weight>(layer_size, learning_rate)
+                    )
+                );
+            }
+            else if(split_layer_string[0] == "tanh")
+            {
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new Tanh<Weight>()
+                    )
+                );
+            }
+            else if(split_layer_string[0] == "sigmoid")
+            {
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new Sigmoid<Weight>()
+                    )
+                );
+            }
+            else if(split_layer_string[0] == "batchnorm" ||
+                    split_layer_string[0] == "bn")
+            {
+                double eps = std::stod(split_layer_string[1], nullptr);
+                double mom = std::stod(split_layer_string[1], nullptr);
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new BatchNorm(eps, mom)
                     )
                 );
             }

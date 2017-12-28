@@ -411,25 +411,12 @@ int main(int argc, char** argv) {
         1e-3, // learning rate
         128, // batch size
         {
-            //"conv2d 1 3 1 28 28 1 0",
-            /*
-            "dense 300 784",
-            "relu",
-            "dense 10 300",
-            */
-            /*"dense 1000 784",
-        //    "relu",
-            "dense 1000 1000",
-        //    "relu",
-            "dense 1000 1000",
-        //    "relu",
-            "dense 10 1000"
-            */
+        //    "conv2d 1 3 1 28 28 1 0",
+        //    "dense 200 676",
+        //
             "dense 200 784",
-            //"prelu 100",
-            "prelu 200",
-            "dense 200 200",
-            "prelu 200",
+            //"bn 1e-5 0.9",
+            "tanh",
             "dense 10 200"
             //"prelu 100",
         },
@@ -437,7 +424,7 @@ int main(int argc, char** argv) {
         //5000 // validation set size. if using, should preshuffle train data.
     );
     auto start = std::chrono::system_clock::now();
-    net.train(4, true, 1000);
+    net.train(2, true, 1000);
     auto end = std::chrono::system_clock::now();
 
     auto start2 = std::chrono::system_clock::now();

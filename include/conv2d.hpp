@@ -49,7 +49,7 @@ public:
                 for(size_t col = 0; col < filter_size; ++col) {
                     for(size_t depth = 0; depth < this->input_depth; ++depth) {
                         this->filters[filter][row][col][depth] = 
-                            aux::gen_double(-.5, .5);
+                            aux::gen_double(-.04, .04);
                     }
                 }
             }
@@ -206,6 +206,7 @@ public:
                 Image(filter_size, 
                       Matrix(filter_size,
                              std::vector<Weight>(this->input_depth, 0))));
+
         // well written ^^^^ 
         // compute gradients of filters.
         for(size_t fprime = 0; fprime < num_filters; ++fprime) {
