@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
         //
             "dense 200 784",
             //"bn 1e-5 0.9",
-            "tanh",
+            "sigmoid",
             "dense 10 200"
             //"prelu 100",
         },

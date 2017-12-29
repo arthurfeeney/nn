@@ -66,18 +66,18 @@ public:
     }
 
     Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
-        size_t use_threads = n_threads;//(n_threads / 4) + 1;
-        /*if(use_threads == 1) {
+        size_t use_threads = (n_threads / 4) + 1;
+        if(use_threads == 1) {
             return backward_pass(d_out); // if only one thread, just use normal
-        }*/
+        }
         Matrix grad = async_helper(this->last_output, use_threads,
                                    backward_thread_task);
         
         Matrix d_input(grad.size(), std::vector<Weight>(grad[0].size()));
 
-        auto rows = thread_alg::split_indices(grad.size(), n_threads);
+        auto rows = thread_alg::split_indices(grad.size(), use_threads);
         std::vector<std::thread> threads;
-        for(size_t thread = 0; thread < n_threads; ++thread) {
+        for(size_t thread = 0; thread < use_threads; ++thread) {
             threads.emplace_back(&Tanh::comp_d_input,
                                  std::ref(rows[thread]),
                                  std::ref(grad),
