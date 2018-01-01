@@ -414,10 +414,14 @@ int main(int argc, char** argv) {
         //    "conv2d 1 3 1 28 28 1 0",
         //    "dense 200 676",
         //
-            "dense 200 784",
-            //"bn 1e-5 0.9",
-            "sigmoid",
-            "dense 10 200"
+            "dense 400 784",
+            "softplus",
+            //"bn 1e-5 0.1",
+            "dense 100 400",
+            "softplus",
+            //"bn 1e-5 0.1",
+            //"dropout 0.5",
+            "dense 10 100"
             //"prelu 100",
         },
         n_threads// number of threads per network in ensemble.

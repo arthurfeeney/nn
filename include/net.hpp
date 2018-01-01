@@ -24,6 +24,7 @@
 #include "tanh.hpp"
 #include "sigmoid.hpp"
 #include "batch_normalization.hpp"
+#include "softplus.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
          typename Opt, typename Weight = double>
@@ -197,10 +198,18 @@ public:
                     split_layer_string[0] == "bn")
             {
                 double eps = std::stod(split_layer_string[1], nullptr);
-                double mom = std::stod(split_layer_string[1], nullptr);
+                double mom = std::stod(split_layer_string[2], nullptr);
                 layers.push_back(
                     std::unique_ptr<Layer_2D<Weight>>(
-                        new BatchNorm(eps, mom)
+                        new BatchNorm<Opt, Weight>(eps, mom)
+                    )
+                );
+            }
+            else if(split_layer_string[0] == "softplus")
+            {
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new Softplus<Weight>()
                     )
                 );
             }

@@ -73,6 +73,29 @@ public:
     }
     
     void train(size_t epochs, bool verbose = false, size_t verbosity = 0) {
+
+        std::vector<std::thread> threads;
+
+        for(size_t net = 0; net < ensemble_size; ++net) {
+            threads.emplace_back(&Ensemble::run_train_cycle,
+                                 std::ref(manager),
+                                 std::ref(ensemble[net]),
+                                 net,
+                                 epochs,
+                                 verbosity,
+                                 n_threads);
+        }
+
+        for(auto& thread : threads) {
+            thread.join();
+        }
+
+        average_ensemble();
+    }
+
+    void async_train_variant(size_t epochs, bool verbose = false, 
+                             size_t verbosity = 0) 
+    {
         std::vector<double> prev_error(3, 1); // used for validation
         for(size_t epoch = 0; epoch < epochs; ++epoch) {
 
@@ -169,6 +192,24 @@ private:
         net.batch_update(chunk_data, chunk_labels); 
     }
     
+    static void
+    run_train_cycle(Data_Manager<DataCont, LabelCont, Weight>& manager,
+                    Net<In, InRank::value, Out, OutRank::value, Opt, Weight>&
+                    net,
+                    size_t net_id, size_t epochs, size_t verbosity = 0,
+                    const size_t num_threads = 1)
+    {
+        for(size_t epoch = 0; epoch < epochs; ++epoch) {
+            manager.process_all_data();
+            if(epoch > 0) {
+                manager.shuffle_data();
+            }
+            run_epoch(manager, net, net_id, epoch, verbosity, num_threads);
+        }
+    }
+
+
+
     // trains a network on the entire dataset one time.
     static void 
     run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
