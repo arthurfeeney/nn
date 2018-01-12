@@ -415,13 +415,9 @@ int main(int argc, char** argv) {
         //    "dense 200 676",
         //
             "dense 400 784",
-            "softplus",
-            //"bn 1e-5 0.1",
-            "dense 100 400",
-            "softplus",
-            //"bn 1e-5 0.1",
-            //"dropout 0.5",
-            "dense 10 100"
+            "relu",
+            "bn 1e-5 0.1",
+            "dense 10 400"
             //"prelu 100",
         },
         n_threads// number of threads per network in ensemble.

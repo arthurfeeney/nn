@@ -209,7 +209,6 @@ private:
     }
 
 
-
     // trains a network on the entire dataset one time.
     static void 
     run_epoch(Data_Manager<DataCont, LabelCont, Weight>& manager, 
