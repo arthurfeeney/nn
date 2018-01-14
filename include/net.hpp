@@ -25,6 +25,7 @@
 #include "sigmoid.hpp"
 #include "batch_normalization.hpp"
 #include "softplus.hpp"
+#include "elu.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
          typename Opt, typename Weight = double>
@@ -212,6 +213,26 @@ public:
                         new Softplus<Weight>()
                     )
                 );
+            }
+            else if(split_layer_string[0] == "elu") 
+            {
+                // if scale is not specified, it defaults to 0.01.
+                if(split_layer_string.size() == 1) {
+                    layers.push_back(
+                        std::unique_ptr<Layer_2D<Weight>>(
+                            new Elu<Weight>()
+                        )
+                    );
+                }
+                // constructs the layer with the scale specified. 
+                else {
+                    double scale = std::stod(split_layer_string[1], nullptr);
+                    layers.push_back(
+                        std::unique_ptr<Layer_2D<Weight>>(
+                            new Elu<Weight>(scale)
+                        )
+                    );
+                }
             }
         }
     }

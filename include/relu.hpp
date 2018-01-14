@@ -34,7 +34,8 @@ public:
 
     Matrix forward_pass(const Matrix& input) {
         this->last_input = input;
-        return relu(input);
+        this->last_output = relu(input);
+        return this->last_output;
     }
 
     Matrix async_forward_pass(const Matrix& input, size_t n_threads) {
@@ -48,14 +49,20 @@ public:
     }
 
     Matrix backward_pass(const Matrix& d_out) {
-        Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
+        Matrix grad(d_out.size(), std::vector<Weight>(d_out[0].size()));
         for(size_t row = 0; row < d_out.size(); ++row) {
             for(size_t col = 0; col < d_out[0].size(); ++col) {
                 // if value in spot of last_input < 0,
                 // set value in d_out to zero, other wise keep it the same.
                 // assign value of d_out to d_input.
-                Weight val = this->last_input[row][col];
-                d_input[row][col] = val >= 0 ? d_out[row][col] : 0;
+                Weight val = this->last_output[row][col];
+                grad[row][col] = val >= 0 ? 1 : 0;
+            }
+        }
+        Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
+        for(size_t row = 0; row < d_out.size(); ++row) {
+            for(size_t col = 0; col < d_out[0].size(); ++col) {
+                d_input[row][col] = grad[row][col] * d_out[row][col];
             }
         }
         return d_input;
@@ -73,18 +80,24 @@ public:
             threads.emplace_back(
                 [](std::vector<int>& indices,
                     const Matrix& o,
-                    const Matrix& last_i,
+                    const Matrix& last_o,
                     Matrix& i) {
+                    Matrix grad(i);
                     for(auto& index : indices) {
                         for(size_t col = 0; col < o[0].size(); ++col) {
-                            Weight val = last_i[index][col];
-                            i[index][col] = val >= 0 ? o[index][col] : 0;
+                            Weight val = last_o[index][col];
+                            grad[index][col] = val >= 0 ? 1 : 0;
+                        }
+                    }
+                    for(auto& index : indices) {
+                        for(size_t col = 0; col < o[0].size(); ++col) {
+                            i[index][col] = grad[index][col] * o[index][col];
                         }
                     }
                 },
                 std::ref(rows[thread]),
                 std::ref(d_out),
-                std::ref(this->last_input),
+                std::ref(this->last_output),
                 std::ref(d_input));
         }
         for(auto& thread : threads) {
