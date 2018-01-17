@@ -26,6 +26,7 @@
 #include "batch_normalization.hpp"
 #include "softplus.hpp"
 #include "elu.hpp"
+#include "evolutional_dropout.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
          typename Opt, typename Weight = double>
@@ -233,6 +234,15 @@ public:
                         )
                     );
                 }
+            }
+            else if(split_layer_string[0] == "evodrop")
+            {
+                size_t layer_size = std::stoi(split_layer_string[1]);
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new EvoDropout2d<Weight>(layer_size)
+                    )
+                );
             }
         }
     }

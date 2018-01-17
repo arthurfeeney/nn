@@ -25,7 +25,7 @@ public:
     using Matrix = std::vector<std::vector<Weight>>;
 
     Dropout2d(double keep_prob): 
-        Layer_2D<Weight>("dense"),
+        Layer_2D<Weight>("dropout"),
         keep_prob(keep_prob)
     {} 
 
@@ -95,7 +95,7 @@ public:
         for(auto& thread : threads) {
             thread.join();
         }
-        this->last_output = dropped;
+        this->last_output = mask;
         return dropped;
     }
 
@@ -115,6 +115,7 @@ public:
     }
 
     Matrix async_backward_pass(const Matrix& d_out, size_t n_threads) {
+        // the operation is so simple it may not even make sense to parallelize
         return backward_pass(d_out);
     }
 

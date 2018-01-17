@@ -62,22 +62,33 @@ public:
     }
 
     Matrix backward_pass(const Matrix& d_out) {
-        Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
         
+        Matrix grad(d_out.size(), std::vector<Weight>(d_out[0].size()));
+
         for(size_t row = 0; row < d_out.size(); ++row) {
             for(size_t col = 0; col < d_out[0].size(); ++col) {
-                Weight val = this->last_input[row][col];
-                d_input[row][col] = val >= 0 ? 
-                                        d_out[row][col] : 
-                                        d_out[row][col] * scales[col];
+                Weight val = this->last_output[row][col];
+                grad[row][col] = val >= 0 ? 
+                                        1 : 
+                                        scales[col];
             }
         }   
+        Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
+
+        for(size_t row = 0; row < d_out.size(); ++row) {
+            for(size_t col = 0; col < d_out[0].size(); ++col) {
+                d_input[row][col] = grad[row][col] * d_out[row][col];
+            }
+        }
+
 
         std::vector<double> feature_sums(scales.size(), 0.0);
         for(size_t i = 0; i < this->last_output[0].size(); ++i) {
             for(size_t e = 0; e < this->last_output.size(); ++e) {
                 double activation = this->last_output[e][i];
-                double gradient_of_activation = activation > 0 ? activation : 0;
+                double gradient_of_activation = activation > 0 ? 
+                                                    1 : 
+                                                    scales[e];
                 feature_sums[i] += d_out[e][i] * gradient_of_activation; 
             }
         }
@@ -104,24 +115,30 @@ public:
         for(size_t thread = 0; thread < n_threads; ++thread) {
             threads.emplace_back(
                 [](std::vector<int>& indices,
-                   std::vector<double> scales,
+                   std::vector<double> s,
                    const Matrix& o,
-                   const Matrix& last_i,
+                   const Matrix& last_o,
                    Matrix& i) 
                 {
+                    Matrix grad(i.size(), std::vector<Weight>(i[0].size()));
                     for(auto& index : indices) {
                         for(size_t col = 0; col < o[0].size(); ++col) {
-                            Weight val = last_i[index][col];
-                            i[index][col] = val >= 0 ? 
-                                                o[index][col] :
-                                                o[index][col] * scales[col];
+                            Weight val = last_o[index][col];
+                            grad[index][col] = val >= 0 ? 
+                                                1 :
+                                                s[col];
+                        }
+                    }
+                    for(auto& index : indices) {
+                        for(size_t col = 0; col < o[0].size(); ++col) {
+                            i[index][col] = grad[index][col] * o[index][col];
                         }
                     }
                 },
                 std::ref(rows[thread]),
                 scales,
                 std::ref(d_out),
-                std::ref(this->last_input),
+                std::ref(this->last_output),
                 std::ref(d_input));
         }
         for(auto& thread : threads) {
@@ -137,7 +154,7 @@ public:
         for(size_t thread = 0; thread < n_threads; ++thread) {
             threads_again.emplace_back(
                 [](std::vector<int>& indices,
-                   std::vector<double> scales,
+                   std::vector<double> s,
                    const Matrix& o,
                    const Matrix& last_o,
                    std::vector<double>& feature) 
@@ -146,7 +163,7 @@ public:
                         for(size_t e = 0; e < last_o.size(); ++e) {
                             double activation = last_o[e][i];
                             double gradient_of_activation = 
-                                activation > 0 ? activation : 0;
+                                activation > 0 ? 1 : s[e];
                             feature[i] += o[e][i] * gradient_of_activation;
                         }
                     }
