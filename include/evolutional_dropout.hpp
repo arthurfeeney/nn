@@ -164,7 +164,10 @@ private:
     void generate_probs(const Matrix& input) {
         size_t d = keep_probs.size(); // datum size
         size_t m = input.size(); // batch size
+
         for(size_t i = 0; i < d; ++i) {
+
+            // can't use std::accumulate because its summing comlumn i.
             double numerator = 0;
             for(size_t j = 0; j < m; ++j) {
                 numerator += std::pow(input[j][i], 2);
@@ -176,12 +179,14 @@ private:
                 double piece = 0;
                 for(size_t j = 0; j < m; ++j) {
                     piece += std::pow(input[j][ip], 2);
-                }
+                } 
                 denominator += std::sqrt(piece / static_cast<double>(m));
             }
             keep_probs[i] = numerator / denominator;
         }
+
         // make it so that the keep probs aren't all too tiny:
+        // f : [min, max] -> [min_desired, max_desired]
         double max_desired = 0.9;
         double min_desired = 0.4;
         double min_cur = *std::min_element(keep_probs.begin(),keep_probs.end());
