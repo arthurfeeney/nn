@@ -32,3 +32,36 @@ It is really easy to make an ensemble which trains in parallel and averages all 
   
 The ensemble also supports mini-batch training!  
 I hope I'm not forgetting to mention anything! Although I'd be a little suprised if anyone ever read this far down the readme (lol)! :o  
+
+Example Network:
+(This network probably won't work well for MNIST in practice)  
+
+Ensemble<vector<vector<double>>,  
+         vector<vector<double>>,  
+         Adam<>,  // network optimizer, in include/Optimzer/adam.hpp  
+         double>  
+ensemble  
+(  
+    train_data,  
+    train_labels,  
+    test_data,   
+    test_labels,  
+    ensemble_size,  
+    1e-3, // learning rate  
+    64,   // batch size  
+    {  
+        "dense 1024 784",  // normal network layer   
+        "relu",            // activation function  
+        "bn 1e-5, 0.1",    // batch normalization (I think this works...)   
+        "dense 1024 1024",  
+        "relu",  
+        "bn 1e-5, 0.1",  
+        "dense 1024 1024",  
+        "relu",  
+        "dropout 0.5",  
+        "dense 10 1024"  
+    }  
+    number_threads // the number of threads EACH network in the ensemble can use.  
+);  
+
+
