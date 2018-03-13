@@ -126,16 +126,13 @@ namespace aux {
     }
 
 
-    template<typename Vect>
-    auto dot(const Vect& v1, const Vect& v2) -> Vect {
-        if(v1.size() != v2.size()) {
-            throw("vectors don't have equal dimension.");
+    template<typename Vect, typename Out = double> 
+    Out dot(const Vect& v1, const Vect& v2) {
+        Out d = 0;
+        for(size_t i = 0; i < v1.size(); ++i) {
+            d += v1[i] * v2[i];
         }
-        Vect dot(v1.size());
-        for(int i = 0; i < v1.size(); ++i) {
-            dot[i] = v1[i] * v2[i];
-        }
-        return dot;
+        return d;
     }
 
     template<typename Matrix>
@@ -232,9 +229,11 @@ namespace aux {
 
     template<typename Matrix>
     auto transpose(const Matrix& m) -> Matrix {
-        Matrix trans(m[0].size(), std::vector<double>(m.size()));
-        for(size_t row = 0; row < m.size(); ++row) {
-            for(size_t col = 0; col < m[0].size(); ++col) {
+        size_t rows = m.size();
+        size_t cols = m[0].size();
+        Matrix trans(cols, std::vector<double>(rows));
+        for(size_t row = 0; row < rows; ++row) {
+            for(size_t col = 0; col < cols; ++col) {
                 trans[col][row] = m[row][col];
             }
         }

@@ -68,7 +68,7 @@ public:
         for(size_t row = 0; row < d_out.size(); ++row) {
             for(size_t col = 0; col < d_out[0].size(); ++col) {
                 Weight val = this->last_output[row][col];
-                grad[row][col] = val >= 0 ? 
+                grad[row][col] = val > 0 ? 
                                         1 : 
                                         scales[col];
             }
@@ -124,7 +124,7 @@ public:
                     for(auto& index : indices) {
                         for(size_t col = 0; col < o[0].size(); ++col) {
                             Weight val = last_o[index][col];
-                            grad[index][col] = val >= 0 ? 
+                            grad[index][col] = val > 0 ? 
                                                 1 :
                                                 s[col];
                         }

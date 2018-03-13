@@ -1,3 +1,5 @@
 
 net_test.*
 *.sh
+net_test
+makefile

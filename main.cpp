@@ -416,7 +416,6 @@ int main(int argc, char** argv) {
         //
             "dense 500 784",
             "relu",
-            "evodrop 500",
             //"bn 1e-5 0.1",
             "dense 10 500"
             //"prelu 100",
@@ -425,7 +424,7 @@ int main(int argc, char** argv) {
         //5000 // validation set size. if using, should preshuffle train data.
     );
     auto start = std::chrono::system_clock::now();
-    net.async_train_variant(4, true, 1000);
+    net.async_train_variant(2, true, 1000);
     auto end = std::chrono::system_clock::now();
 
     auto start2 = std::chrono::system_clock::now();

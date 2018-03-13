@@ -52,7 +52,7 @@ public:
         this->last_input = input;
         // produces a bxN matrix. From bxK, KxN
         Matrix apply_weights = aux::matmul(input, this->weights);
-        // adds bias to 1xN matrix
+        // adds bias to bxN matrix
         Matrix apply_bias = apply_weights;
         if(apply_bias.size() == 1) { // batch size is one.
             apply_bias = aux::matadd(apply_bias, this->bias);

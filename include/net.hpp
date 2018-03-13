@@ -27,6 +27,7 @@
 #include "softplus.hpp"
 #include "elu.hpp"
 #include "evolutional_dropout.hpp"
+#include "dense_lsh.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
          typename Opt, typename Weight = double>
@@ -241,6 +242,23 @@ public:
                 layers.push_back(
                     std::unique_ptr<Layer_2D<Weight>>(
                         new EvoDropout2d<Weight>(layer_size)
+                    )
+                );
+            }
+            else if(split_layer_string[0] == "denseLSH")
+            {
+                layers.push_back(
+                    std::unique_ptr<Layer_2D<Weight>>(
+                        new DenseLSH<Opt, Weight>(
+                            std::stoi(split_layer_string[1]),
+                            std::stoi(split_layer_string[2]),
+                            std::stoi(split_layer_string[3]),
+                            std::stod(split_layer_string[4]),
+                            std::stoi(split_layer_string[5]),
+                            std::stoi(split_layer_string[6]),
+                            std::stoi(split_layer_string[7]),
+                            learning_rate
+                        )
                     )
                 );
             }

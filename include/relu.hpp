@@ -56,7 +56,7 @@ public:
                 // set value in d_out to zero, other wise keep it the same.
                 // assign value of d_out to d_input.
                 Weight val = this->last_output[row][col];
-                grad[row][col] = val >= 0 ? 1 : 0;
+                grad[row][col] = val > 0 ? 1 : 0;
             }
         }
         Matrix d_input(d_out.size(), std::vector<Weight>(d_out[0].size()));
@@ -86,7 +86,7 @@ public:
                     for(auto& index : indices) {
                         for(size_t col = 0; col < o[0].size(); ++col) {
                             Weight val = last_o[index][col];
-                            grad[index][col] = val >= 0 ? 1 : 0;
+                            grad[index][col] = val > 0 ? 1 : 0;
                         }
                     }
                     for(auto& index : indices) {
