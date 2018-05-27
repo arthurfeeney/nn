@@ -9,6 +9,16 @@
 #include "aux.hpp"
 #include "layers.hpp"
 
+/*
+ * This is not tested very well. It executes and doesn't hurt accuracy too much
+ * (worse accuracy doesn't necessarily mean it doesn't work) on small networks
+ * Not distributed at all, and afaik positive effects aren't very noticeable
+ * on small networks. So a single threaded, taxing op on a big network probably
+ * running on my laptop since it's single threaded it wouldn't make sense to 
+ * run it on hpc. 
+ */
+
+
 template<typename Opt, typename Weight = double>
 class BatchNorm : public Layer_2D<Weight> {
 public:

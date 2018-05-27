@@ -282,15 +282,26 @@ public:
     {
         // compute the loss.
         const size_t batch_size = inputs.size();
-
-        In input(batch_size);
+        
+        Out prediction;
         Out label(batch_size);
+
         for(size_t i = 0; i < batch_size; ++i) {
-            input[i] = inputs[i][0];
             label[i] = labels[i][0];
         }
 
-        Out prediction = predict(input, true, n_threads);
+        // if there are 3d layers, 
+        if constexpr(in_rank == 3) {
+            prediction = predict(inputs, true, n_threads);
+        }
+        else {
+            In input(batch_size);
+            for(size_t i = 0; i < batch_size; ++i) {
+                input[i] = inputs[i][0];
+            }
+
+            prediction = predict(input, true, n_threads);
+        }
 
         Out d_out(loss.comp_d_loss(prediction, label));
          
@@ -325,11 +336,12 @@ public:
     }
 
     // compute output for given input.
-    Out predict(In input, bool training, const size_t n_threads) {
+    template<typename Input>
+    Out predict(Input input, bool training, const size_t n_threads) {
         // if 3d layers exist, process them first.
         if constexpr (in_rank == 3) {
-            auto prediction_3d = predict_3d(input, training, n_threads);
-            auto flattened = aux::flatten_3d(prediction_3d);
+            auto predictions_3d = predict_3d(input, training, n_threads);
+            auto flattened = aux::flatten_4d(predictions_3d);
             return predict_2d(flattened, training, n_threads); 
         } 
         else if constexpr (in_rank == 2)  
@@ -340,7 +352,8 @@ public:
         return Out();
     }
 
-    In predict_3d(In input, bool training, const size_t n_threads) {
+    template<typename Input>
+    Input predict_3d(Input input, bool training, const size_t n_threads) {       
         for(const auto& layer : layers_3d) {
             layer->set_phase(training);
             input = layer->forward_pass(input);

@@ -103,6 +103,7 @@ vector<vector<vector<double>>> get_all_label(const T& labels) {
 
 template<typename T>
 auto flat_to_im(const T& flat, size_t height, size_t width) {
+    // height x width x 1
     vector<vector<vector<double>>> im(width, vector<vector<double>>(height,
                                        vector<double>(1, 0)));
     size_t index = 0;
@@ -124,6 +125,7 @@ auto data_to_im(const T& data, size_t height, size_t width) {
     for(size_t i = 0; i < data.size(); ++i) {
         images[i] = flat_to_im(data[i], height, width);
     }
+
     return images;
 }
 
@@ -395,34 +397,36 @@ int main(int argc, char** argv) {
     int ensemble_size = std::stoi(es, 0, 10);
     int n_threads = std::stoi(nt, 0, 10);
 
-    Ensemble<vector<vector<double>>, 
+    auto im = data_to_im(mnist_dataset.training_images, 28, 28);
+
+
+    Ensemble<vector<vector<vector<double>>>, 
              vector<vector<double>>, 
              Adam<>,
              double> 
     net 
     (
-        //data_to_im(mnist_dataset.training_images, 28, 28),
-        get_all_data(mnist_dataset.training_images),
+        data_to_im(mnist_dataset.training_images, 28, 28),
+        //get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
-        //data_to_im(mnist_dataset.test_images, 28, 28),
-        get_all_data(mnist_dataset.test_images),
+        data_to_im(mnist_dataset.test_images, 28, 28),
+        //get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         ensemble_size, // ensemble size
         1e-3, // learning rate
         128, // batch size
         {
-        //    "conv2d 1 3 1 28 28 1 0",
-        //    "dense 200 676",
-        //
-            "dense 500 784",
+            "conv2d 1 3 1 28 28 1 0",
             "relu",
-            //"bn 1e-5 0.1",
-            "dense 10 500"
-            //"prelu 100",
+            "dense 100 676",
+            "relu",
+            "dense 10 100"
         },
         n_threads// number of threads per network in ensemble.
         //5000 // validation set size. if using, should preshuffle train data.
     );
+
+
     auto start = std::chrono::system_clock::now();
     net.async_train_variant(2, true, 1000);
     auto end = std::chrono::system_clock::now();

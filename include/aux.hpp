@@ -48,7 +48,12 @@ namespace aux {
     Matrix splice(const Matrix& m, size_t start_row, size_t start_col, 
                   size_t size) 
     {
-        Matrix out(size, std::vector<double>(size, 0));
+        // ValType is the base type contained in the matrix passed in
+        using ValType = 
+            typename std::remove_reference<
+                        typename Matrix::value_type::value_type
+                      >::type;
+        Matrix out(size, std::vector<ValType>(size, 0));
         for(size_t row = 0; row < size; ++row) {
             for(size_t col = 0; col < size; ++col) {
                 out[row][col] = m[row + start_row][col + start_col];
@@ -59,11 +64,11 @@ namespace aux {
 
 
     // assumes depth of 2...
-    template<typename Matrix>
-    std::vector<double> flatten_2d(Matrix m)
+    template<typename Matrix, typename Ret>
+    Ret flatten_2d(Matrix m)
     {
         
-        std::vector<double> flat(0);
+        Ret flat(0);
         for(const auto& row : m) {
             for(auto item : row) {
                 flat.push_back(item);
@@ -75,13 +80,28 @@ namespace aux {
     template<typename Image>
     std::vector<std::vector<double>> flatten_3d(const Image& image)
     {
-        std::vector<std::vector<double>> 
-            flat(1);
+        std::vector<std::vector<double>> flat(1);
         
+        using Matr = std::vector<std::vector<double>>;
+
         for(const auto& mat : image) {
-            auto line = flatten_2d(mat);
+            auto line = flatten_2d<Matr, std::vector<double>>(mat);
             for(size_t i = 0; i < line.size(); ++i) {
                 flat[0].push_back(line[i]);
+            }
+        }
+
+        return flat;
+    }
+
+    template<typename ImageBatches>
+    std::vector<std::vector<double>> flatten_4d(const ImageBatches& input) {
+        std::vector<std::vector<double>> flat(1);
+
+        for(const auto& image : input) {
+            auto line = flatten_3d(image);
+            for(size_t i = 0; i < line.size(); ++i) {
+                flat[0].push_back(line[0][i]);
             }
         }
 

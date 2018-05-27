@@ -17,6 +17,7 @@ class Layer_3D {
 public:
     using Matrix = std::vector<std::vector<Weight>>;
     using Image = std::vector<Matrix>;
+    using ImageBatches = std::vector<Image>;
     using Filters = std::vector<Image>;
 
     Layer_3D(std::string layer_type): layer_type(layer_type) {}
@@ -81,11 +82,11 @@ public:
         step_size(other.step_size)
     {}
 
-    virtual Image forward_pass(const Image& input) = 0;
+    virtual ImageBatches forward_pass(const ImageBatches& input) = 0;
 
-    virtual Image operator()(const Image& input) = 0;
+    virtual ImageBatches operator()(const ImageBatches& input) = 0;
 
-    virtual Image backward_pass(const Image& d_out) = 0;
+    virtual ImageBatches backward_pass(const ImageBatches& d_out) = 0;
 
     virtual std::tuple<int, int, int> proper_output_dim() const = 0;
 
@@ -142,8 +143,8 @@ protected:
     size_t input_width;
     size_t input_depth;
 
-    Image last_input;
-    Image last_output;
+    ImageBatches last_input;
+    ImageBatches last_output;
 
     std::string layer_type;
 
