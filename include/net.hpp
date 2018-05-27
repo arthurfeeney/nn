@@ -265,14 +265,22 @@ public:
         }
     }
 
-    // updates the network for a single input.
-    void update(const In& input, const Out& label) {
-        Out&& prediction = predict(input, true);
-        Out&& dloss = loss.comp_d_loss(prediction, label);
-        Out& d_out = dloss;
-        for(int layer = layers.size() - 1; layer >= 0; --layer) {
-            d_out = layers[layer]->backward_pass(d_out);
+    Out label_matrix(const std::vector<Out>& labels) {
+        const size_t batch_size = labels.size();
+        Out label(batch_size);
+        for(size_t i = 0; i < batch_size; ++i) {
+            label[i] = labels[i][0];
         }
+        return label;
+    }
+
+    In input_matrix(const std::vector<In>& inputs) {
+        const size_t batch_size = inputs.size();
+        In input(batch_size);
+        for(size_t i = 0; i < batch_size; ++i) {
+            input[i] = inputs[i][0];
+        }
+        return input;
     }
 
     // updates the network given a batch of inputs (possibly only 1).
@@ -280,28 +288,24 @@ public:
                       const std::vector<Out>& labels,
                       const size_t n_threads = 1) 
     {
-        // compute the loss.
         const size_t batch_size = inputs.size();
         
         Out prediction;
-        Out label(batch_size);
 
-        for(size_t i = 0; i < batch_size; ++i) {
-            label[i] = labels[i][0];
-        }
+        Out label = label_matrix(labels);
 
-        // if there are 3d layers, 
+
         if constexpr(in_rank == 3) {
-            prediction = predict(inputs, true, n_threads);
+            // if in_rank is 3, u
+            std::vector<In> temp = predict_3d(inputs, true, n_threads);
+            auto flat = aux::flatten_4d(temp);
+            prediction = predict_2d(flat, true, n_threads);
         }
         else {
-            In input(batch_size);
-            for(size_t i = 0; i < batch_size; ++i) {
-                input[i] = inputs[i][0];
-            }
-
-            prediction = predict(input, true, n_threads);
+            In input = input_matrix(inputs);
+            prediction = predict_2d(input, true, n_threads);
         }
+
 
         Out d_out(loss.comp_d_loss(prediction, label));
          
@@ -327,21 +331,34 @@ public:
             int width = std::get<1>(dims);
             int depth = std::get<2>(dims);
 
-            In d_out_3d = aux::unflatten(d_out, depth, height, width);
+            std::vector<In> d_out_3d = 
+                im2col::matrix_2_image_batch<
+                    std::vector<In>,
+                    decltype(d_out)
+                >(d_out, height, width, depth);
+                                                            
 
             for(int layer = layers_3d.size() - 1; layer >= 0; --layer) {
                 d_out_3d = layers_3d[layer]->backward_pass(d_out_3d);
             }
         }
+    
     }
 
     // compute output for given input.
-    template<typename Input>
-    Out predict(Input input, bool training, const size_t n_threads) {
+    //template<typename Input>
+    Out predict(In input, bool training, const size_t n_threads) {
         // if 3d layers exist, process them first.
         if constexpr (in_rank == 3) {
-            auto predictions_3d = predict_3d(input, training, n_threads);
+
+            std::vector<In> single_im_batch(1);
+            single_im_batch[0] = input;
+
+            auto predictions_3d = predict_3d(single_im_batch, training,
+                                             n_threads);
+
             auto flattened = aux::flatten_4d(predictions_3d);
+            
             return predict_2d(flattened, training, n_threads); 
         } 
         else if constexpr (in_rank == 2)  
@@ -352,8 +369,8 @@ public:
         return Out();
     }
 
-    template<typename Input>
-    Input predict_3d(Input input, bool training, const size_t n_threads) {       
+    std::vector<In> predict_3d(std::vector<In> input, bool training, 
+                               const size_t n_threads) {    
         for(const auto& layer : layers_3d) {
             layer->set_phase(training);
             input = layer->forward_pass(input);

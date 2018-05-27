@@ -59,9 +59,10 @@ im_2_col(const Im& input, size_t kernel_size, size_t stride,
 template<typename Im, typename Matr>
 static Im 
 col_2_im(const Matr& input, size_t kernel_size, size_t stride) {
-    // used in the backward pass of im_2_col in conv2d.hpp 
+    // used by col_2_im_batcehs for conv2d backward pass
     // input is [M] x [H x W]
-
+    // returns a single image.
+    
 }
 
 
@@ -69,6 +70,7 @@ template<typename Images, typename Matr>
 Matr im_2_col_batches(const Images& input, size_t kernel_size, size_t stride,
                       size_t output_height, size_t output_width)
 {
+    // puts a single image in adjacent columns. Doesn't spread them out.
     using Image = 
         typename std::remove_reference<typename Images::value_type>::type;
     using MatrRowType =
@@ -127,5 +129,44 @@ Matr conv_2_row(const Conv& c) {
     return row_matr;
 }
 
+template<typename ImageBatch, typename Matrix>
+ImageBatch 
+matrix_2_image_batch(const Matrix& inputs, size_t height, size_t width, 
+                     size_t depth) {
+    // inputs is [M] x [N x H x W]
+    // outpust a [N] x [M] x [H] x [W] batch of images
+    // a single image will be in adjecent columns. Not spread out.
+    using ImType = 
+        typename std::remove_reference<typename ImageBatch::value_type>::type;
+    using PlaneType =
+        typename std::remove_reference<typename ImType::value_type>::type;
+    using RowType = 
+        typename std::remove_reference<typename PlaneType::value_type>::type;
+
+    size_t one_images_columns = height * width;
+
+    size_t num_images = inputs[0].size() / (one_images_columns);
+
+
+    ImageBatch image_batch(num_images, 
+                           ImType(depth, 
+                                   PlaneType(height, 
+                                             RowType(width, 0))));
+
+    for(size_t i = 0; i < num_images; ++i) {
+        for(size_t d = 0; d < inputs.size(); ++d) {
+            size_t c = 0;
+            for(size_t h = 0; h < height; ++h) {
+                for(size_t w = 0; w < width; ++w) {
+                    image_batch[i][d][h][w] = inputs[d][i*c];
+                    ++c;
+                }
+            }
+        }
+    }
+    return image_batch;
+
 }
+
+} // namespace im2col
 #endif // IM2COL_HPP

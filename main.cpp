@@ -400,23 +400,24 @@ int main(int argc, char** argv) {
     auto im = data_to_im(mnist_dataset.training_images, 28, 28);
 
 
-    Ensemble<vector<vector<vector<double>>>, 
+    Ensemble<vector<vector<double>>, 
              vector<vector<double>>, 
              Adam<>,
              double> 
     net 
     (
-        data_to_im(mnist_dataset.training_images, 28, 28),
-        //get_all_data(mnist_dataset.training_images),
+        //data_to_im(mnist_dataset.training_images, 28, 28),
+        get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
-        data_to_im(mnist_dataset.test_images, 28, 28),
-        //get_all_data(mnist_dataset.test_images),
+        //data_to_im(mnist_dataset.test_images, 28, 28),
+        get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         ensemble_size, // ensemble size
         1e-3, // learning rate
-        128, // batch size
+        10, // batch size
         {
-            "conv2d 1 3 1 28 28 1 0",
+            //"conv2d 1 3 1 28 28 1 0",
+            "dense 676 784",
             "relu",
             "dense 100 676",
             "relu",

@@ -98,7 +98,7 @@ namespace aux {
     std::vector<std::vector<double>> flatten_4d(const ImageBatches& input) {
         std::vector<std::vector<double>> flat(1);
 
-        for(const auto& image : input) {
+        for(auto& image : input) {
             auto line = flatten_3d(image);
             for(size_t i = 0; i < line.size(); ++i) {
                 flat[0].push_back(line[0][i]);

@@ -104,21 +104,11 @@ public:
     ImageBatches forward_pass(const ImageBatches& input) {
         this->last_input = input;
 
-        const size_t num_inputs = input.size();
-
         std::tuple<int, int, int> output_dims = proper_output_dim();
         const size_t output_height = std::get<0>(output_dims);
         const size_t output_width = std::get<1>(output_dims);
         const size_t output_depth = std::get<2>(output_dims);
-
-        ImageBatches images_output(num_inputs, 
-            Image(output_depth, 
-                  Matrix(output_height, 
-                         std::vector<Weight>(output_width, 0)))
-        );
-        
-        
-        
+                   
         // make image patches into columns of matrix
         // [K x K x C] x [H x W]
         auto im_matr = 
@@ -134,23 +124,16 @@ public:
         // [M] x [H x W]
         auto out_matr = aux::matmul(filter_matr, im_matr);
 
-        for(size_t i = 0; i < num_inputs; ++i) {
-            for(size_t d = 0; d < output_depth; ++d) {
-                for(size_t h = 0; h < output_height; ++h) {
-                    for(size_t w = 0; w < output_width; ++w) {
-                         
-                    }
-                }
-            }
-        }
-
 
         // reshape out_matr into an image.
-        
+        ImageBatches images_output = 
+            im2col::matrix_2_image_batch<
+                ImageBatches,
+                Matrix
+            >(out_matr, output_height, output_width, output_depth);
 
         this->last_output = images_output;
         
-
         return images_output;
     }
 
