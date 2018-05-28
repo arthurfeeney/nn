@@ -18,6 +18,22 @@
 #include <type_traits>
 
 namespace aux {
+    
+    template<typename RealType = double>
+    class EasyNormal {
+    private:
+        std::random_device rd;
+        std::mt19937 gen;
+        std::normal_distribution<RealType> d;
+    public:
+        EasyNormal(RealType mean = 0.0, RealType var = 1.0):
+            rd(), gen(rd()), d(mean, var)
+        {}
+
+        RealType operator()() {
+            return d(gen);
+        }
+    };
 
     // type function to find rank of a container.
     // doesn't work on things that aren't containers.

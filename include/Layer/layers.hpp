@@ -8,8 +8,8 @@
 #include <string>
 #include <tuple>
 
-#include "aux.hpp"
-#include "loss.hpp"
+#include "../aux.hpp"
+#include "../loss.hpp"
 
 template <typename Weight = double>
 class Layer_2D {

@@ -10,9 +10,9 @@
 #include <memory>
 #include <cmath>
 
-#include "aux.hpp"
-#include "layers.hpp"
-#include "thread_aux.hpp"
+#include "../../aux.hpp"
+#include "../layers.hpp"
+#include "../../thread_aux.hpp"
 
 
 template <typename Opt, typename Weight = double>

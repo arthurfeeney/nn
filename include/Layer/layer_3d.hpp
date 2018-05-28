@@ -8,7 +8,7 @@
 #include <string>
 #include <tuple>
 
-#include "aux.hpp"
+#include "../aux.hpp"
 
 // base class for layers that apply 3d transformations.
 

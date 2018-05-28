@@ -11,9 +11,9 @@
 #include <thread>
 #include <functional>
 
-#include "aux.hpp"
-#include "layers.hpp"
-#include "thread_aux.hpp"
+#include "../../aux.hpp"
+#include "../layers.hpp"
+#include "../../thread_aux.hpp"
 
 
 template <typename Weight = double>

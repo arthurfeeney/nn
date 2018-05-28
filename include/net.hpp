@@ -13,21 +13,21 @@
 #include <boost/algorithm/string.hpp>
 #include <type_traits>
 
-#include "layers.hpp"
+#include "Layer/layers.hpp"
 #include "aux.hpp"
-#include "dense.hpp"
-#include "relu.hpp"
-#include "conv2d.hpp"
-#include "dropout.hpp"
-#include "lrelu.hpp"
-#include "prelu.hpp"
-#include "tanh.hpp"
-#include "sigmoid.hpp"
-#include "batch_normalization.hpp"
-#include "softplus.hpp"
-#include "elu.hpp"
-#include "evolutional_dropout.hpp"
-#include "dense_lsh.hpp"
+#include "Layer/dense.hpp"
+#include "Layer/Activation/relu.hpp"
+#include "Layer/conv2d.hpp"
+#include "Layer/dropout.hpp"
+#include "Layer/Activation/lrelu.hpp"
+#include "Layer/Activation/prelu.hpp"
+#include "Layer/Activation/tanh.hpp"
+#include "Layer/Activation/sigmoid.hpp"
+#include "Layer/batch_normalization.hpp"
+#include "Layer/Activation/softplus.hpp"
+#include "Layer/Activation/elu.hpp"
+#include "Layer/evolutional_dropout.hpp"
+#include "Layer/dense_lsh.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
          typename Opt, typename Weight = double>

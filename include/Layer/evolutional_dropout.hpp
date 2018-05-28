@@ -12,8 +12,8 @@
 #include <cmath>
 
 #include "layers.hpp"
-#include "aux.hpp"
-#include "thread_aux.hpp"
+#include "../aux.hpp"
+#include "../thread_aux.hpp"
 
 
 /*

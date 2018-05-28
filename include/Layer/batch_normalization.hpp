@@ -6,7 +6,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "aux.hpp"
+#include "../aux.hpp"
 #include "layers.hpp"
 
 /*

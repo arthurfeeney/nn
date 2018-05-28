@@ -9,9 +9,9 @@
 #include <tuple>
 #include <memory>
 
-#include "aux.hpp"
+#include "../aux.hpp"
 #include "layer_3d.hpp"
-#include "im2col.hpp"
+#include "../im2col.hpp"
 
 
 /*

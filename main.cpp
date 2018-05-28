@@ -6,11 +6,11 @@
 #include <type_traits>
 
 #include "include/aux.hpp"
-#include "include/layers.hpp"
+#include "include/Layer/layers.hpp"
 #include "include/net.hpp"
 #include "include/ensemble.hpp"
 #include "mnist_data/mnist/include/mnist/mnist_reader.hpp"
-#include "include/conv2d.hpp"
+#include "include/Layer/conv2d.hpp"
 #include "include/Optimizer/nesterov.hpp"
 #include "include/Optimizer/SGD.hpp"
 #include "include/Optimizer/momentum.hpp"
@@ -414,7 +414,7 @@ int main(int argc, char** argv) {
         get_all_label(mnist_dataset.test_labels),
         ensemble_size, // ensemble size
         1e-3, // learning rate
-        10, // batch size
+        64, // batch size
         {
             //"conv2d 1 3 1 28 28 1 0",
             "dense 676 784",
@@ -429,7 +429,7 @@ int main(int argc, char** argv) {
 
 
     auto start = std::chrono::system_clock::now();
-    net.async_train_variant(2, true, 1000);
+    net.async_train_variant(1, true, 1000);
     auto end = std::chrono::system_clock::now();
 
     auto start2 = std::chrono::system_clock::now();

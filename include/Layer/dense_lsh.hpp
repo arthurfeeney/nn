@@ -12,10 +12,10 @@
 #include <unordered_map>
 #include <set>
 
-#include "aux.hpp"
-#include "thread_aux.hpp"
+#include "../aux.hpp"
+#include "../thread_aux.hpp"
 #include "layers.hpp"
-#include "hash_functor.hpp"
+#include "../hash_functor.hpp"
 
 template <typename Opt, typename Weight = double>
 struct DenseLSH : public Layer_2D<Weight> {

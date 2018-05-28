@@ -10,8 +10,8 @@
 #include <memory>
 #include <cmath>
 
-#include "aux.hpp"
-#include "thread_aux.hpp"
+#include "../aux.hpp"
+#include "../thread_aux.hpp"
 #include "layers.hpp"
 
 template <typename Opt, typename Weight = double>
@@ -28,10 +28,10 @@ public:
         optimizer()
     {
         // some form of uniform xavier intialization.
-        double v = std::sqrt(6.0 / input_size);
+        aux::EasyNormal<> gen(0, std::sqrt(2.0 / (input_size + num_nodes)));
         for(auto& row : this->weights) {
             for(auto& item : row) {
-                item = aux::gen_double(-0.5 * v, 0.5 * v);
+                item = gen();
             }
         }
     }
