@@ -15,8 +15,9 @@
 #include "net.hpp"
 #include "data_manager.hpp"
 #include "Optimizer/SGD.hpp"
+#include "Initializer/uniform.hpp"
 
-template<typename In, typename Out, typename Opt = SGD, 
+template<typename In, typename Out, typename Opt = SGD,
          typename Weight = double>
 class Ensemble {
 public:
@@ -71,7 +72,15 @@ public:
     {
         return ensemble[0];
     }
-    
+
+    void initialize(std::string which_init) {
+        // initialize the weights of all networks with f.
+        for(auto& net : ensemble) {
+            net.initialize(which_init);
+        }
+    }
+ 
+    // train the network, average ensemble after each epoch
     void train(size_t epochs, bool verbose = false, size_t verbosity = 0) {
 
         std::vector<std::thread> threads;
@@ -93,6 +102,7 @@ public:
         average_ensemble();
     }
 
+    // a variant training method
     void async_train_variant(size_t epochs, bool verbose = false, 
                              size_t verbosity = 0) 
     {
@@ -135,7 +145,6 @@ public:
         }
     }
 
-    // tests the quality of the network on the test set.
     // returns the percent it got correct.
     double test() {
         Net<In, InRank::value, Out, OutRank::value, Opt, Weight> 
@@ -157,12 +166,12 @@ public:
 
 private:
 
-    Data_Manager<DataCont, LabelCont, Weight> manager; // holds data
+    Data_Manager<DataCont, LabelCont, Weight> manager; // manages data!
 
     std::vector<Net<In, InRank::value, Out, OutRank::value, Opt, Weight>>
         ensemble;
 
-    size_t ensemble_size;
+    size_t ensemble_size; // number of networks in the ensemble.
 
     size_t n_threads; // number of threads available to EACH network.
     
@@ -171,10 +180,13 @@ private:
     Out (*conv_label)(const LabelCont&);
   
     void average_ensemble() {
+        // add all networks to the first one.
         for(size_t net = 1; net < ensemble_size; ++net) {
             ensemble[0] += ensemble[net];
         }
+        // divide the first network 
         ensemble[0] /= ensemble_size;
+        // copy network weights into other networks
         for(size_t net = 1; net < ensemble_size; ++net) {
             ensemble[net] = ensemble[0];
         }

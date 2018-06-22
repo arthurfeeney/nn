@@ -7,9 +7,12 @@
 #include <utility>
 #include <string>
 #include <tuple>
+#include <string>
+#include <cmath>
 
 #include "../aux.hpp"
 #include "../loss.hpp"
+#include "../Initializer/uniform.hpp"
 
 template <typename Weight = double>
 class Layer_2D {
@@ -151,8 +154,36 @@ public:
         for(size_t row = 0; row < bias[0].size(); ++row) {
             bias[0][row] /= count;
         }
-        return *this;
-         
+        return *this;     
+    }
+
+    void initialize(std::string which_init, double gain = 1) {
+        // this function is not ideal at all, but it was convenient :/
+        // would rather have init::<function> passed in instead of a string
+        size_t fan_in = weights.size();
+        size_t fan_out = weights[0].size();
+
+        if(which_init == "xavier_uniform") {
+            double denom = static_cast<double>(fan_in + fan_out);
+            double a = gain * std::sqrt(6.0 / denom); 
+            init::rand::UniformRand<Weight> init(-a, a);
+            for(size_t i = 0; i < weights.size(); ++i) {
+                for(size_t j = 0; j < weights[i].size(); ++j) {
+                    weights[i][j] = init();
+                }
+            }
+        }
+
+        else if(which_init == "xavier_normal") {
+            double denom = static_cast<double>(fan_in + fan_out);
+            double std = gain * std::sqrt(2.0 / denom);
+            init::rand::NormalRand<Weight> init(0, std);
+            for(size_t i = 0; i < weights.size(); ++i) {
+                for(size_t j = 0; j < weights[i].size(); ++j) {
+                    weights[i][j] = init();
+                }
+            }
+        }
     }
 };
 

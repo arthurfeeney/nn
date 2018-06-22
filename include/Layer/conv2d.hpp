@@ -20,7 +20,7 @@
  */
 
 
-template<typename Weight = double>
+template<typename Opt, typename Weight = double>
 class Conv2d : public Layer_3D<Weight> {
 public:
     using Matrix = std::vector<std::vector<Weight>>;
@@ -44,7 +44,8 @@ public:
         num_filters(num_filters),
         filter_size(filter_size),
         stride(stride),
-        padding(padding)
+        padding(padding),
+        optimizer()
     {
         //double fan_in = input_height*input_width*input_depth;
         //auto out_dims = proper_output_dim();
@@ -141,13 +142,50 @@ public:
         return forward_pass(input);
     }
 
-    // BREAK THIS UP INTO MORE FUNCTIONS. 
     ImageBatches backward_pass(const ImageBatches& d_out) {
 
-        return d_out;
-        num_filters = this->filters.size();
+        std::tuple<int, int, int> output_dims = proper_output_dim();
+        const size_t output_height = std::get<0>(output_dims);
+        const size_t output_width = std::get<1>(output_dims);
+        const size_t output_depth = std::get<2>(output_dims);
+
+        // reshape d_out into a matrix.
+        Matrix d_out_matr =
+            im2col::image_batch_2_matrix<
+                ImageBatches, Matrix
+            >(d_out);
+
         
-        // will need to pad this->last_input when I add in padding.
+        auto filter_matr = im2col::conv_2_row<Filters, Matrix>(this->filters);
+
+        auto im_matr = 
+            im2col::im_2_col_batches<
+                ImageBatches, Matrix
+            >(this->last_input, filter_size, stride, output_height,
+              output_width);
+    
+         auto d_input_matr = aux::matmul(aux::transpose(filter_matr),
+                                         d_out_matr);
+
+         auto d_filters_matr = aux::matmul(d_out_matr, 
+                                           aux::transpose(im_matr));
+         
+        
+
+        optimizer.perform(filter_matr, d_filters_matr, this->step_size);
+
+        this->filters = 
+            im2col::matrix_2_image_batch<
+                ImageBatches,
+                Matrix
+            >(filter_matr, output_height, output_width, output_depth);
+
+        
+        // d_input = im2col::col_2_im(d_input_matr, kernel_size, stride,
+        //                            padding);
+
+
+         return d_out;
         
     }
  
@@ -171,6 +209,8 @@ private:
     size_t stride;
 
     size_t padding;
+
+    Opt optimizer;
 
 };
 

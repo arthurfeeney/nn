@@ -17,6 +17,7 @@
 #include "include/Optimizer/adagrad.hpp"
 #include "include/Optimizer/rmsprop.hpp"
 #include "include/Optimizer/adam.hpp"
+#include "include/Initializer/uniform.hpp"
 
 using std::vector;
 using std::make_unique;
@@ -427,9 +428,11 @@ int main(int argc, char** argv) {
         //5000 // validation set size. if using, should preshuffle train data.
     );
 
+    net.initialize("xavier_normal");
+
 
     auto start = std::chrono::system_clock::now();
-    net.async_train_variant(1, true, 1000);
+    net.train(1, true, 1000);
     auto end = std::chrono::system_clock::now();
 
     auto start2 = std::chrono::system_clock::now();

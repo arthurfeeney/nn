@@ -9,6 +9,7 @@
 #include <tuple>
 
 #include "../aux.hpp"
+#include "../Initializer/uniform.hpp"
 
 // base class for layers that apply 3d transformations.
 
@@ -126,6 +127,12 @@ public:
             }    
         }
         return *this;
+    }
+
+    void initialize(std::string which_init) {
+        if(which_init == "uniform") {
+            //init::uniform<Filters, Weight>(filters, 4, -1, 1);
+        }
     }
 
     std::string type() const {

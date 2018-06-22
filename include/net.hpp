@@ -28,6 +28,7 @@
 #include "Layer/Activation/elu.hpp"
 #include "Layer/evolutional_dropout.hpp"
 #include "Layer/dense_lsh.hpp"
+#include "Initializer/uniform.hpp"
 
 template<typename In, size_t in_rank, typename Out, size_t out_rank,
          typename Opt, typename Weight = double>
@@ -133,7 +134,7 @@ public:
             else if(split_layer_string[0] == "conv2d") {
                 layers_3d.push_back(
                     std::unique_ptr<Layer_3D<Weight>>(
-                        new Conv2d<Weight>(
+                        new Conv2d<Opt, Weight>(
                             std::stoi(split_layer_string[1]),
                             std::stoi(split_layer_string[2]),
                             std::stoi(split_layer_string[3]),
@@ -262,6 +263,18 @@ public:
                     )
                 );
             }
+        }
+    }
+
+    void initialize(std::string which_init) {
+        // initialize the weight of network using f
+        if(which_init == "uniform") {
+            for(auto& layer : layers) {
+                layer->initialize("uniform");
+            }
+            for(auto& layer : layers_3d) {
+                layer->initialize("uniform");
+            } 
         }
     }
 

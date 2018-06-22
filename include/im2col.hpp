@@ -56,13 +56,45 @@ im_2_col(const Im& input, size_t kernel_size, size_t stride,
     return input_matr; 
 }
 
-template<typename Im, typename Matr>
-static Im 
-col_2_im(const Matr& input, size_t kernel_size, size_t stride) {
-    // used by col_2_im_batcehs for conv2d backward pass
+template<typename Image, typename Matr>
+static Image 
+col_2_im(const Matr& input, size_t kernel_size, size_t stride, 
+         size_t output_height, size_t output_width) 
+{
+    // used by col_2_im_batches for conv2d backward pass
     // input is [M] x [H x W]
-    // returns a single image.
+    // output is [M] x [H] x [W]
+
+    using ImPlaneType =
+        typename std::remove_reference<typename Image::value_type>::type;
+    using RowType =
+        typename std::remove_reference<typename ImPlaneType::value_type>::type;
+
+    Matr input_cols = aux::transpose(input);
+
+    size_t depth = input.size() / (kernel_size*kernel_size);
+    size_t input_height = input.size();
+    size_t input_width = input[0].size();
+
+    size_t num_cols = output_height * output_width;
+
+    Image image(depth,
+                ImPlaneType(output_height, 
+                            RowType(output_width, 0)));
+
+    for(size_t ih = 0; ih < input_height; ++ih) {
+        for(size_t iw = 0; iw < input_width; ++iw) {
+             
+        }
+    }
+    for(int k_h = 0; k_h < kernel_size; ++k_h) {
+        for(int k_w = 0; k_w < kernel_size; ++k_w) {
+            
+        }
+    }
     
+
+    return image;
 }
 
 
@@ -103,6 +135,14 @@ Matr im_2_col_batches(const Images& input, size_t kernel_size, size_t stride,
         }
     }
     return input_matr;
+}
+
+template<typename ImageBatches, typename Matrix>
+ImageBatches
+col_2_im_batches(const Matrix& input, size_t kernel_size, size_t stride,
+                 size_t padding)
+{
+
 }
 
 
@@ -165,7 +205,37 @@ matrix_2_image_batch(const Matrix& inputs, size_t height, size_t width,
         }
     }
     return image_batch;
+}
 
+template<typename ImageBatch, typename Matrix>
+Matrix
+image_batch_2_matrix(const ImageBatch& input) 
+{
+    // input is [N] x [M] x [H] x [W]
+    // output is [M] x [N x H x W]
+    using RowType = 
+        typename std::remove_reference<typename Matrix::value_type>::type;
+
+    size_t num_inputs = input.size();
+    size_t num_channels = input[0].size();
+    size_t height = input[0][0].size();
+    size_t width = input[0][0][0].size();
+
+    Matrix output(num_channels, RowType(num_inputs * height * width));
+
+    for(size_t n = 0; n < num_inputs; ++n) {
+        size_t output_col = height * width * n;
+        for(size_t m = 0; m < num_channels; ++m) {
+            for(size_t h = 0; h < height; ++h) {
+                for(size_t w = 0; w < width; ++w) {
+                    output[m][output_col] = input[n][m][h][w];
+                    ++output_col;
+                }
+            }
+        }
+    }
+
+    return output;
 }
 
 } // namespace im2col
