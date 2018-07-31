@@ -37,7 +37,9 @@ protected:
     bool weighted = false;
 
 public:
-    Layer_2D(std::string layer_type): layer_type(layer_type) {}
+    Layer_2D(std::string layer_type): 
+        size(0), input_size(0),layer_type(layer_type) 
+    {}
 
     Layer_2D(std::string layer_type, double learning_rate):
         layer_type(layer_type),
@@ -57,8 +59,6 @@ public:
         step_size(learning_rate),
         weighted(true)
     {}
-
-    ~Layer_2D() = default;
 
     Layer_2D(Layer_2D&& other):
         weights(other.weights),
@@ -160,12 +160,15 @@ public:
     void initialize(std::string which_init, double gain = 1) {
         // this function is not ideal at all, but it was convenient :/
         // would rather have init::<function> passed in instead of a string
-        size_t fan_in = weights.size();
-        size_t fan_out = weights[0].size();
+        
+        size_t fan_in = size;
+        size_t fan_out = input_size;
 
-        if(which_init == "xavier_uniform") {
-            double denom = static_cast<double>(fan_in + fan_out);
-            double a = gain * std::sqrt(6.0 / denom); 
+        double denom = static_cast<double>(fan_in + fan_out);
+
+        if(which_init == "xavier_uniform" && denom > 0) {
+            double std = gain * std::sqrt(2.0 / denom); 
+            double a = std::sqrt(3.0) * std;
             init::rand::UniformRand<Weight> init(-a, a);
             for(size_t i = 0; i < weights.size(); ++i) {
                 for(size_t j = 0; j < weights[i].size(); ++j) {
@@ -173,8 +176,8 @@ public:
                 }
             }
         }
-
-        else if(which_init == "xavier_normal") {
+        
+        else if(which_init == "xavier_normal" && denom > 0) {
             double denom = static_cast<double>(fan_in + fan_out);
             double std = gain * std::sqrt(2.0 / denom);
             init::rand::NormalRand<Weight> init(0, std);
@@ -233,19 +236,19 @@ struct Squared_Error_Loss {
 
     Squared_Error_Loss() {}
 
-    double comp_loss(double pred, double actual) {
+    Weight comp_loss(Weight pred, Weight actual) {
         return (pred - actual) * (pred - actual);
     }
 
-    double forward_pass(double pred, double actual) {
+    Weight forward_pass(Weight pred, Weight actual) {
         return comp_loss(pred, actual);
     }
 
-    double operator()(double pred, double actual) {
+    Weight operator()(Weight pred, Weight actual) {
         return comp_loss(pred, actual);
     }
 
-    double backward_pass(double loss, double actual) {
+    Weight backward_pass(Weight loss, Weight actual) {
         return 1.0;
     }
 };

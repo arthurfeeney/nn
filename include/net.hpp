@@ -266,16 +266,14 @@ public:
         }
     }
 
-    void initialize(std::string which_init) {
+    void initialize(std::string which_init, double gain = 1) {
         // initialize the weight of network using f
-        if(which_init == "uniform") {
-            for(auto& layer : layers) {
-                layer->initialize("uniform");
-            }
-            for(auto& layer : layers_3d) {
-                layer->initialize("uniform");
-            } 
+        for(auto& layer : layers) {
+            layer->initialize(which_init, gain);
         }
+        for(auto& layer : layers_3d) {
+            layer->initialize(which_init);
+        } 
     }
 
     Out label_matrix(const std::vector<Out>& labels) {
@@ -301,6 +299,7 @@ public:
                       const std::vector<Out>& labels,
                       const size_t n_threads = 1) 
     {
+
         const size_t batch_size = inputs.size();
         
         Out prediction;
@@ -311,7 +310,8 @@ public:
         if constexpr(in_rank == 3) {
             // if in_rank is 3, u
             std::vector<In> temp = predict_3d(inputs, true, n_threads);
-            auto flat = aux::flatten_4d(temp);
+            auto flat = 
+                aux::batch_to_row_matr(temp);
             prediction = predict_2d(flat, true, n_threads);
         }
         else {
@@ -330,6 +330,7 @@ public:
         
         // apply backward pass to each layer iteratively to update.
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
+            // this loop updates the 2d layers. 
             d_out = n_threads > 1 ? 
                         layers[layer]->async_backward_pass(d_out, n_threads) :
                         layers[layer]->backward_pass(d_out);        
@@ -337,6 +338,7 @@ public:
 
         // update 3d layers if they exist.
         if constexpr(in_rank == 3) {
+            // dims is the output dimensions of the last 3d layer. 
             std::tuple<int, int, int> dims = 
                 layers_3d[layers_3d.size() - 1]->proper_output_dim();
 
@@ -345,7 +347,7 @@ public:
             int depth = std::get<2>(dims);
 
             std::vector<In> d_out_3d = 
-                im2col::matrix_2_image_batch<
+                aux::row_matr_to_batch<
                     std::vector<In>,
                     decltype(d_out)
                 >(d_out, height, width, depth);
@@ -361,8 +363,13 @@ public:
     // compute output for given input.
     //template<typename Input>
     Out predict(In input, bool training, const size_t n_threads) {
-        // if 3d layers exist, process them first.
+        /*
+         * NOTE: This function is not used by batch_update.
+         * This stuff is handled in batch_update.
+         * This function is just here for legacy(?) stuff. 
+         */
         if constexpr (in_rank == 3) {
+            // if 3d layers exist, process them first.
 
             std::vector<In> single_im_batch(1);
             single_im_batch[0] = input;
@@ -370,16 +377,18 @@ public:
             auto predictions_3d = predict_3d(single_im_batch, training,
                                              n_threads);
 
-            auto flattened = aux::flatten_4d(predictions_3d);
-            
+            // flatten 3d layer output to input it to 2d layers.
+            auto flattened = aux::batch_to_row_matr(predictions_3d);
+
             return predict_2d(flattened, training, n_threads); 
         } 
-        else if constexpr (in_rank == 2)  
+        else if constexpr (in_rank == 2) {  
             return predict_2d(input, training, n_threads); 
+        }
         else {
             std::cout << "Input dimensions are invalid. Predict(In, bool)\n";
+            return Out();
         }
-        return Out();
     }
 
     std::vector<In> predict_3d(std::vector<In> input, bool training, 
@@ -388,6 +397,7 @@ public:
             layer->set_phase(training);
             input = layer->forward_pass(input);
         }
+
         return input;
     }
 
@@ -396,7 +406,7 @@ public:
         for(const auto& layer : layers) {
             layer->set_phase(training);
             trans = n_threads > 1 ?
-                        layer->async_forward_pass(input, n_threads) :
+                        layer->async_forward_pass(trans, n_threads) :
                         layer->forward_pass(trans);
         }
         return trans;

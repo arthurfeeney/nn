@@ -104,14 +104,16 @@ vector<vector<vector<double>>> get_all_label(const T& labels) {
 
 template<typename T>
 auto flat_to_im(const T& flat, size_t height, size_t width) {
-    // height x width x 1
-    vector<vector<vector<double>>> im(width, vector<vector<double>>(height,
-                                       vector<double>(1, 0)));
+    // returns 1 x Height x Width image. 
+    using Image = vector<vector<vector<double>>>;
+
+    Image im(1, vector<vector<double>>(height, vector<double>(width, 0)));
+
     size_t index = 0;
-    for(auto& height : im) {
-        for(auto& width : height) {
-            for(auto& val : width) {
-                val = flat[index];
+    for(auto& channel : im) {
+        for(auto& h : channel) {
+            for(auto& w : h) {
+                w = flat[index];
                 ++index;
             }
         }
@@ -126,6 +128,9 @@ auto data_to_im(const T& data, size_t height, size_t width) {
     for(size_t i = 0; i < data.size(); ++i) {
         images[i] = flat_to_im(data[i], height, width);
     }
+
+    //std::cout << images.size() << images[0].size() << images[0][0].size() <<
+    //             images[0][0][0].size();
 
     return images;
 }
@@ -385,11 +390,11 @@ int main(int argc, char** argv) {
     
     auto mnist_dataset = mnist::read_dataset<vector, vector, uint8_t, uint8_t>
         (   // mnist data location.
-            "/home/afeeney/pet/net/mnist_data/mnist/"
+            "/home/afeeney/Project/nn/mnist_data/mnist/"
         );
 
     if(argc != 3) {
-        std::cout << "need two arguments!" << '\n';
+        std::cout << "need arguments for number of networks in ensemble and threads per network!" << '\n';
         return 1;
     }
     std::string es(argv[1]);
@@ -398,27 +403,24 @@ int main(int argc, char** argv) {
     int ensemble_size = std::stoi(es, 0, 10);
     int n_threads = std::stoi(nt, 0, 10);
 
-    auto im = data_to_im(mnist_dataset.training_images, 28, 28);
-
-
-    Ensemble<vector<vector<double>>, 
+    Ensemble<vector<vector<vector<double>>>, 
              vector<vector<double>>, 
              Adam<>,
              double> 
     net 
     (
-        //data_to_im(mnist_dataset.training_images, 28, 28),
-        get_all_data(mnist_dataset.training_images),
+        data_to_im(mnist_dataset.training_images, 28, 28),
+        //get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
-        //data_to_im(mnist_dataset.test_images, 28, 28),
-        get_all_data(mnist_dataset.test_images),
+        data_to_im(mnist_dataset.test_images, 28, 28),
+        //get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         ensemble_size, // ensemble size
         1e-3, // learning rate
         64, // batch size
         {
-            //"conv2d 1 3 1 28 28 1 0",
-            "dense 676 784",
+            "conv2d 1 3 1 28 28 1 0",
+            //"dense 676 784",
             "relu",
             "dense 100 676",
             "relu",
@@ -428,7 +430,7 @@ int main(int argc, char** argv) {
         //5000 // validation set size. if using, should preshuffle train data.
     );
 
-    net.initialize("xavier_normal");
+    net.initialize("xavier_uniform");
 
 
     auto start = std::chrono::system_clock::now();

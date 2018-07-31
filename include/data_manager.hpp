@@ -35,6 +35,45 @@ public:
         shuffle_data();
     }
 
+    // move constructor
+    Data_Manager(Data_Manager&& other):
+        train_data(std::move(other.train_data)),
+        train_labels(std::move(other.train_labels)),
+        test_data(std::move(other.test_data)),
+        test_labels(std::move(other.test_labels)),
+        validation_data(std::move(other.validation_set_size)),
+        validation_labels(std::move(other.validation_set_size)),
+        data_order(std::move(other.train_labels.size())),
+        batch_size(std::move(other.batch_size)),
+        ensemble_size(std::move(other.ensemble_size)),
+        trs(std::move(other.train_labels.size())),
+        tes(std::move(other.test_labels.size()))
+    {
+        std::iota(data_order.begin(), data_order.end(), 0);
+        process_all_data();
+        process_validation_data();
+        shuffle_data();
+    }
+        
+    Data_Manager(const Data_Manager& other):
+        train_data(other.train_data),
+        train_labels(other.train_labels),
+        test_data(other.test_data),
+        test_labels(other.test_labels),
+        validation_data(other.validation_set_size),
+        validation_labels(other.validation_set_size),
+        data_order(other.train_labels.size()),
+        batch_size(other.batch_size),
+        ensemble_size(other.ensemble_size),
+        trs(other.train_labels.size()),
+        tes(other.test_labels.size())
+    {
+        std::iota(data_order.begin(), data_order.end(), 0);
+        process_all_data();
+        process_validation_data();
+        shuffle_data();
+    }
+
     std::pair<DataCont, LabelCont> get_batch() {
         if(batch_index + batch_size >= data_order.size()) {
             batch_index = 0;
@@ -77,11 +116,14 @@ public:
 
     void process_all_data() {
         // assumes data is shuffled
+       
         chunkified_batches.clear();
+        chunkified_batches.resize(0);
         for(size_t index = 0; 
             index < train_size() - validation_labels.size(); 
             index += batch_size) 
         {
+            std::cout << batch_size;
             chunkified_batches.push_back(chunk_batch(get_batch()));
         }
     } 
@@ -103,6 +145,15 @@ public:
         std::shuffle(data_order.begin(), 
                      data_order.end() - validation_size(), 
                      g);
+    }
+
+    void shuffle_batches() {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(chunkified_batches.begin(), 
+                     chunkified_batches.end() - validation_size(), 
+                     g);
+    
     }
 
     std::pair<DataCont, LabelCont> get_chunk(size_t net, size_t chunk) {

@@ -19,11 +19,10 @@ public:
     using Matrix = std::vector<std::vector<Weight>>;
     using Image = std::vector<Matrix>;
     using ImageBatches = std::vector<Image>;
-    using Filters = std::vector<Image>;
 
     Layer_3D(std::string layer_type): layer_type(layer_type) {}
 
-    Layer_3D(std::string layer_type, Filters filters, size_t input_height, 
+    Layer_3D(std::string layer_type, Matrix filters, size_t input_height, 
              size_t input_width, size_t input_depth, double learning_rate):
         filters(filters),
         input_height(input_height), 
@@ -83,31 +82,13 @@ public:
         step_size(other.step_size)
     {}
 
-    virtual ImageBatches forward_pass(const ImageBatches& input) = 0;
-
-    virtual ImageBatches operator()(const ImageBatches& input) = 0;
-
-    virtual ImageBatches backward_pass(const ImageBatches& d_out) = 0;
-
-    virtual std::tuple<int, int, int> proper_output_dim() const = 0;
-
-    virtual Layer_3D<Weight>* clone() = 0;
-
     Layer_3D<Weight>& operator+=(const Layer_3D<Weight>& other) {
         if(this == &other) {
             return *this;
         }
         for(size_t filter = 0; filter < filters.size(); ++filter) {
-            for(size_t height = 0; height < filters[0].size(); ++height) {
-                for(size_t width = 0; width < filters[0][0].size(); ++width) {
-                    for(size_t depth = 0; 
-                        depth < filters[0][0][0].size(); 
-                        ++depth) 
-                    {
-                        filters[filter][height][width][depth] +=
-                            other.filters[filter][height][width][depth];
-                    }
-                }
+            for(size_t idx = 0; idx < filters[0].size(); ++idx) {
+                filters[filter][idx] += other.filters[filter][idx];
             }    
         }
         return *this;
@@ -115,23 +96,32 @@ public:
 
     Layer_3D<Weight>& operator/=(const size_t scalar) {
         for(size_t filter = 0; filter < filters.size(); ++filter) {
-            for(size_t height = 0; height < filters[0].size(); ++height) {
-                for(size_t width = 0; width < filters[0][0].size(); ++width) {
-                    for(size_t depth = 0; 
-                        depth < filters[0][0][0].size(); 
-                        ++depth) 
-                    {
-                        filters[filter][height][width][depth] /= scalar;
-                    }
-                }
+            for(size_t idx = 0; idx < filters[0].size(); ++idx) {
+                filters[filter][idx] /= scalar;
             }    
         }
         return *this;
     }
 
-    void initialize(std::string which_init) {
-        if(which_init == "uniform") {
-            //init::uniform<Filters, Weight>(filters, 4, -1, 1);
+    void initialize(std::string which_init, double gain = 1) {
+        std::pair<size_t, size_t> fans = fan_in_fan_out();
+        size_t fan_in = fans.first;
+        size_t fan_out = fans.second;
+
+        double denom = static_cast<double>(fan_in + fan_out);
+
+        if(which_init == "xavier_uniform") {
+
+            double std = gain * std::sqrt(2.0 / denom);
+            double a = std::sqrt(3.0) * std;
+            init::rand::UniformRand<Weight> init(-a, a);
+                    
+            for(auto& filter : filters) {
+                for(auto& val : filter) {
+                    val = init();
+                    std::cout << val << '\n';
+                }
+            } 
         }
     }
 
@@ -143,8 +133,35 @@ public:
         is_training = training;
     }
 
+    virtual ImageBatches forward_pass(const ImageBatches& input) = 0;
+
+    virtual ImageBatches operator()(const ImageBatches& input) = 0;
+
+    virtual ImageBatches backward_pass(const ImageBatches& d_out) = 0;
+
+    virtual std::tuple<int, int, int> proper_output_dim() const = 0;
+
+    virtual Layer_3D<Weight>* clone() = 0;
+
+private:
+
+    std::pair<size_t, size_t> fan_in_fan_out() {
+        // this is basically stolen from pytorch.
+        size_t num_input_fmaps = filters[0].size();
+        size_t num_output_fmaps = filters.size();    
+        size_t receptive_field_size = 1;
+        if(aux::type_rank<Matrix>::value == 2) {
+            // number of elements per filter.
+            // since a filter is a row, it's the size of the row.
+            receptive_field_size = filters[1].size();
+        }
+        size_t fan_in = num_input_fmaps * receptive_field_size;
+        size_t fan_out = num_output_fmaps * receptive_field_size;
+        return std::make_pair(fan_in, fan_out);
+    }
+
 protected:
-    Filters filters;
+    Matrix filters;
 
     size_t input_height;
     size_t input_width;

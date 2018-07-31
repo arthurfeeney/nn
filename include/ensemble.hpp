@@ -83,6 +83,8 @@ public:
     // train the network, average ensemble after each epoch
     void train(size_t epochs, bool verbose = false, size_t verbosity = 0) {
 
+        std::cout << "training begun\n";
+
         std::vector<std::thread> threads;
 
         for(size_t net = 0; net < ensemble_size; ++net) {
@@ -211,10 +213,12 @@ private:
                     size_t net_id, size_t epochs, size_t verbosity = 0,
                     const size_t num_threads = 1)
     {
+        std::cout << "run train cycle\n";
         for(size_t epoch = 0; epoch < epochs; ++epoch) {
-            manager.process_all_data();
+            //manager.process_all_data();
             if(epoch > 0) {
-                manager.shuffle_data();
+                //manager.shuffle_data();
+                //manager.shuggle_batches();
             }
             run_epoch(manager, net, net_id, epoch, verbosity, num_threads);
         }
@@ -228,6 +232,7 @@ private:
               size_t net_id, unsigned int epoch, unsigned int verbosity = 0,
               const size_t num_threads = 1) 
     {
+        std::cout << "running an epoch\n";
         for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) {
             if(net_id == 0 && verbosity && batch % verbosity == 0) {
                 // only the 'main' net prints

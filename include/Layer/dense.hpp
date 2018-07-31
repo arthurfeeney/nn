@@ -10,6 +10,8 @@
 #include <memory>
 #include <cmath>
 
+#include <iostream>
+
 #include "../aux.hpp"
 #include "../thread_aux.hpp"
 #include "layers.hpp"
@@ -51,6 +53,7 @@ public:
         // input is bxK. b is batch size K is size of datum.
         this->last_input = input;
         // produces a bxN matrix. From bxK, KxN
+
         Matrix apply_weights = aux::matmul(input, this->weights);
         // adds bias to bxN matrix
         Matrix apply_bias = apply_weights;
@@ -65,7 +68,6 @@ public:
             }
         }
         // saves the output of layer.
-        this->last_output = apply_bias;
         return apply_bias; //returns the scores
     }
 
@@ -82,7 +84,6 @@ public:
                 apply_bias[b][v] += this->bias[0][v];
             }
         }
-        this->last_output = apply_bias;
         return apply_bias;
     }
 
@@ -101,6 +102,7 @@ public:
         * finds gradients for weights, bias, and input to feed to next
         *  layer.
         */
+
         auto d_input = aux::matmul(d_out, aux::transpose(this->weights));
 
         auto d_weights = aux::matmul(aux::transpose(this->last_input), d_out);

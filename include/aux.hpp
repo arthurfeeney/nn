@@ -82,8 +82,7 @@ namespace aux {
     // assumes depth of 2...
     template<typename Matrix, typename Ret>
     Ret flatten_2d(Matrix m)
-    {
-        
+    { 
         Ret flat(0);
         for(const auto& row : m) {
             for(auto item : row) {
@@ -110,18 +109,65 @@ namespace aux {
         return flat;
     }
 
-    template<typename ImageBatches>
-    std::vector<std::vector<double>> flatten_4d(const ImageBatches& input) {
-        std::vector<std::vector<double>> flat(1);
+    template<typename ImageBatch>
+    auto
+    batch_to_row_matr(const ImageBatch& input) {
+        
+        size_t row_len = input[0].size() * input[0][0].size() * 
+                         input[0][0][0].size();
 
-        for(auto& image : input) {
-            auto line = flatten_3d(image);
-            for(size_t i = 0; i < line.size(); ++i) {
-                flat[0].push_back(line[0][i]);
+        std::vector<std::vector<double>>
+        row_matr(input.size(), std::vector<double>(row_len, 0));        
+
+ 
+        for(size_t im = 0; im < input.size(); ++im) {
+            size_t idx = 0;
+            for(size_t c = 0; c < input[0].size(); ++c) {
+                for(size_t h = 0; h < input[0][0].size(); ++h) {
+                    for(size_t w = 0; w < input[0][0][0].size(); ++w) {
+                        row_matr[im][idx] = input[im][c][h][w];
+                        ++idx;
+                    }
+                }
             }
         }
+        return row_matr;
+    }
 
-        return flat;
+    template<typename ImageBatch, typename Matrix>
+    auto
+    row_matr_to_batch(const Matrix& input, size_t output_height, 
+                      size_t output_width, size_t output_depth) 
+    {
+        using Image = 
+            typename std::remove_reference<
+                typename ImageBatch::value_type
+            >::type;
+        using Matr =
+            typename std::remove_reference<typename Image::value_type>::type;
+        using Row = 
+            typename std::remove_reference<typename Matr::value_type>::type;
+
+
+        size_t num_images = input.size();
+        
+        ImageBatch images(num_images,
+                          Image(output_depth,
+                                Matr(output_height,
+                                     Row(output_width, 0))));
+
+        for(size_t im = 0; im < num_images; ++im) {
+            size_t idx = 0;
+            for(size_t d = 0; d < output_depth; ++d) {
+                for(size_t h = 0; h < output_height; ++h) {
+                    for(size_t w = 0; w < output_width; ++w) {
+                        images[im][d][h][w] = input[im][idx];
+                        ++idx;
+                    }
+                }
+            }
+        }
+        return images;
     }
 
     // requires a 1xN input.
