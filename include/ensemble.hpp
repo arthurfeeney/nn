@@ -32,7 +32,9 @@ public:
              DataCont test_data,
              LabelCont test_labels,
              size_t ensemble_size,
-             double learning_rate, 
+             double learning_rate,
+             size_t learning_rate_step,
+             double learning_rate_decay, 
              size_t batch_size,
              std::initializer_list<std::string> input,
              size_t n_threads = 1, // num of threads available to EACH network.
@@ -54,6 +56,8 @@ public:
                      Opt,
                      Weight>(learning_rate, input)),
         ensemble_size(ensemble_size), 
+        learning_rate_step(learning_rate_step),
+        learning_rate_decay(learning_rate_decay),
         n_threads(n_threads),
         conv_data(cd),
         conv_label(cl)
@@ -73,10 +77,11 @@ public:
         return ensemble[0];
     }
 
-    void initialize(std::string which_init) {
+    template<typename InitFunc, typename ...Args>
+    void initialize(InitFunc f, Args... args) {
         // initialize the weights of all networks with f.
         for(auto& net : ensemble) {
-            net.initialize(which_init);
+            net.initialize(f, args...);
         }
     }
  
@@ -93,6 +98,8 @@ public:
                                  std::ref(ensemble[net]),
                                  net,
                                  epochs,
+                                 learning_rate_step,
+                                 learning_rate_decay,
                                  verbosity,
                                  n_threads);
         }
@@ -166,6 +173,7 @@ public:
                static_cast<double>(manager.test_size());
     }
 
+
 private:
 
     Data_Manager<DataCont, LabelCont, Weight> manager; // manages data!
@@ -174,6 +182,9 @@ private:
         ensemble;
 
     size_t ensemble_size; // number of networks in the ensemble.
+
+    size_t learning_rate_step;
+    double learning_rate_decay;
 
     size_t n_threads; // number of threads available to EACH network.
     
@@ -210,7 +221,9 @@ private:
     run_train_cycle(Data_Manager<DataCont, LabelCont, Weight>& manager,
                     Net<In, InRank::value, Out, OutRank::value, Opt, Weight>&
                     net,
-                    size_t net_id, size_t epochs, size_t verbosity = 0,
+                    size_t net_id, size_t epochs, 
+                    size_t lr_step, double lr_decay, 
+                    size_t verbosity = 0,
                     const size_t num_threads = 1)
     {
         std::cout << "run train cycle\n";
@@ -221,6 +234,8 @@ private:
                 //manager.shuggle_batches();
             }
             run_epoch(manager, net, net_id, epoch, verbosity, num_threads);
+            
+            net.decay_learning_rate(epoch, lr_step, lr_decay);
         }
     }
 
@@ -234,7 +249,9 @@ private:
     {
         std::cout << "running an epoch\n";
         for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) {
-            if(net_id == 0 && verbosity && batch % verbosity == 0) {
+            if(net_id == 0 && verbosity && 
+               batch % (verbosity / manager.step_size()) == 0) 
+            {
                 // only the 'main' net prints
                 std::cout << "epoch: " << epoch << " step: " << 
                              batch * manager.step_size() << '\n';

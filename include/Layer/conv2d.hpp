@@ -159,8 +159,9 @@ public:
         // update layer weights using the optimizer.
         optimizer.perform(this->filters, d_filters_matr, this->step_size);
          
-        /*
+        
         // use col2im to retrieve d_input. 
+        /*
         ImageBatches d_input = 
              im2col::col_2_im_batches<ImageBatches, Matrix>(d_input_matr, 
                                                             filter_size, 

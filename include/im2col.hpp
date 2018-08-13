@@ -71,7 +71,7 @@ col_2_im(const Matr& input, size_t kernel_size, size_t stride,
     using RowType =
         typename std::remove_reference<typename ImPlaneType::value_type>::type;
 
-    // transposing makes it much easier to process the columns.
+    // transposing makes it easier to process the columns.
     Matr input_cols = aux::transpose(input);
 
     size_t depth = input.size() / (kernel_size*kernel_size);
@@ -165,19 +165,20 @@ col_2_im_batches(const Matrix& input, size_t kernel_size, size_t stride,
         >::type;
 
     ImageBatch output(0);  // output is initally empty.
-    
     size_t num_cols_per_image = output_height * output_width;
 
     size_t num_images = input[0].size() / num_cols_per_image;
 
     for(size_t image = 0; image < num_images; ++image) {
-        Matrix image_matr = aux::splice(input, 0, image*num_cols_per_image, 
+        Matrix image_matr = aux::splice(input, 0, image*num_cols_per_image,
                                         num_cols_per_image);        
+    /*
         Image im = col_2_im<Image, Matrix>(image_matr, kernel_size, stride, 
                                            output_height, output_width); 
         output.push_back(im);
+    */
     }
-    return output;
+    return ImageBatch();
 }
 
 

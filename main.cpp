@@ -18,6 +18,10 @@
 #include "include/Optimizer/rmsprop.hpp"
 #include "include/Optimizer/adam.hpp"
 #include "include/Initializer/uniform.hpp"
+#include "include/Initializer/xavier_uniform.hpp"
+#include "include/Initializer/xavier_normal.hpp"
+#include "include/Initializer/kaiming_uniform.hpp"
+#include "include/Initializer/kaiming_normal.hpp"
 
 using std::vector;
 using std::make_unique;
@@ -403,26 +407,30 @@ int main(int argc, char** argv) {
     int ensemble_size = std::stoi(es, 0, 10);
     int n_threads = std::stoi(nt, 0, 10);
 
-    Ensemble<vector<vector<vector<double>>>, 
+    Ensemble<vector<vector<double>>, 
              vector<vector<double>>, 
              Adam<>,
              double> 
     net 
     (
-        data_to_im(mnist_dataset.training_images, 28, 28),
-        //get_all_data(mnist_dataset.training_images),
+        //data_to_im(mnist_dataset.training_images, 28, 28),
+        get_all_data(mnist_dataset.training_images),
         get_all_label(mnist_dataset.training_labels),
-        data_to_im(mnist_dataset.test_images, 28, 28),
-        //get_all_data(mnist_dataset.test_images),
+        //data_to_im(mnist_dataset.test_images, 28, 28),
+        get_all_data(mnist_dataset.test_images),
         get_all_label(mnist_dataset.test_labels),
         ensemble_size, // ensemble size
         1e-3, // learning rate
+        30, // num steps between learning rate decay
+        .1, // amount to scale learning rate by. 
         64, // batch size
         {
-            "conv2d 1 3 1 28 28 1 0",
-            //"dense 676 784",
+            //"conv2d 1 3 1 28 28 1 0",
+            "dense 676 784",
             "relu",
             "dense 100 676",
+            "relu",
+            "dense 100 100",
             "relu",
             "dense 10 100"
         },
@@ -430,11 +438,13 @@ int main(int argc, char** argv) {
         //5000 // validation set size. if using, should preshuffle train data.
     );
 
-    net.initialize("xavier_uniform");
+    net.initialize(init::xavier_normal<std::vector<std::vector<double>>, 
+                                       double>, 
+                   1);
 
 
     auto start = std::chrono::system_clock::now();
-    net.train(1, true, 1000);
+    net.train(2, true, 1000);
     auto end = std::chrono::system_clock::now();
 
     auto start2 = std::chrono::system_clock::now();

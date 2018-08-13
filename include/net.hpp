@@ -266,15 +266,17 @@ public:
         }
     }
 
-    void initialize(std::string which_init, double gain = 1) {
-        // initialize the weight of network using f
+
+    template<typename InitFunc, typename ...Args>
+    void initialize(InitFunc f, Args... args) {
         for(auto& layer : layers) {
-            layer->initialize(which_init, gain);
+            layer->initialize(f, args...);
         }
-        for(auto& layer : layers_3d) {
-            layer->initialize(which_init);
-        } 
+        /*for(auto& layer : layers_3d) {
+            layer->initialize(f, args...);
+        }*/
     }
+
 
     Out label_matrix(const std::vector<Out>& labels) {
         const size_t batch_size = labels.size();
@@ -307,15 +309,19 @@ public:
         Out label = label_matrix(labels);
 
 
+        // if input is 3d, start with predict_3d. Otherwise just use 
+        // predict_2d
         if constexpr(in_rank == 3) {
             // if in_rank is 3, u
             std::vector<In> temp = predict_3d(inputs, true, n_threads);
-            auto flat = 
-                aux::batch_to_row_matr(temp);
+
+            auto flat = aux::batch_to_row_matr(temp);
+           
             prediction = predict_2d(flat, true, n_threads);
         }
         else {
             In input = input_matrix(inputs);
+            
             prediction = predict_2d(input, true, n_threads);
         }
 
@@ -328,9 +334,14 @@ public:
             }
         }
         
+
+        /*
+         * Use d_out to begin the update. 
+         */
+
         // apply backward pass to each layer iteratively to update.
         for(int layer = layers.size() - 1; layer >= 0; --layer) {
-            // this loop updates the 2d layers. 
+            // use async version if there is more than one thread.
             d_out = n_threads > 1 ? 
                         layers[layer]->async_backward_pass(d_out, n_threads) :
                         layers[layer]->backward_pass(d_out);        
@@ -346,6 +357,7 @@ public:
             int width = std::get<1>(dims);
             int depth = std::get<2>(dims);
 
+            // transform d_out from a matrix to a batch of images.
             std::vector<In> d_out_3d = 
                 aux::row_matr_to_batch<
                     std::vector<In>,
@@ -476,6 +488,14 @@ public:
         // TODO: implement for 3d layers.
         return sum;
     }
+
+    void decay_learning_rate(size_t epoch, size_t step, double scale) {
+        for(auto& layer : layers) {
+            layer->decay_learning_rate(epoch, step, scale);
+        }
+    }
+
+
 };
 
 

@@ -55,7 +55,8 @@ public:
         // produces a bxN matrix. From bxK, KxN
 
         Matrix apply_weights = aux::matmul(input, this->weights);
-        // adds bias to bxN matrix
+
+        // adds bias to bxN matrix in a stupid way.
         Matrix apply_bias = apply_weights;
         if(apply_bias.size() == 1) { // batch size is one.
             apply_bias = aux::matadd(apply_bias, this->bias);

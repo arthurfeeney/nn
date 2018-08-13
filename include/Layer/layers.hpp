@@ -157,36 +157,19 @@ public:
         return *this;     
     }
 
-    void initialize(std::string which_init, double gain = 1) {
-        // this function is not ideal at all, but it was convenient :/
-        // would rather have init::<function> passed in instead of a string
-        
+
+    template<typename InitFunc, typename ...Args>
+    void initialize(InitFunc f, Args... args) {
         size_t fan_in = size;
         size_t fan_out = input_size;
+        f(weights, fan_in, fan_out, args...);
+    }
 
-        double denom = static_cast<double>(fan_in + fan_out);
-
-        if(which_init == "xavier_uniform" && denom > 0) {
-            double std = gain * std::sqrt(2.0 / denom); 
-            double a = std::sqrt(3.0) * std;
-            init::rand::UniformRand<Weight> init(-a, a);
-            for(size_t i = 0; i < weights.size(); ++i) {
-                for(size_t j = 0; j < weights[i].size(); ++j) {
-                    weights[i][j] = init();
-                }
-            }
-        }
-        
-        else if(which_init == "xavier_normal" && denom > 0) {
-            double denom = static_cast<double>(fan_in + fan_out);
-            double std = gain * std::sqrt(2.0 / denom);
-            init::rand::NormalRand<Weight> init(0, std);
-            for(size_t i = 0; i < weights.size(); ++i) {
-                for(size_t j = 0; j < weights[i].size(); ++j) {
-                    weights[i][j] = init();
-                }
-            }
-        }
+    void decay_learning_rate(size_t epoch, size_t step, double scale) {
+        // internally, learning rate is called step_size
+        if(epoch % step == 0) {
+            step_size /= scale;
+        } 
     }
 };
 
