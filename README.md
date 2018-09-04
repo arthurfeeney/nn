@@ -1,5 +1,5 @@
 # nn
-A toy library for making a neural network in C++.   
+### A toy library for making a neural network in C++.   
 
 Main has a test using the ensemble class for MNIST datase, it may not be a good test, but just whatever I have been messing around with... Needs g++-7 -std=c++17 or clang 3.9 or some other equivalent compiler.   
 
@@ -36,6 +36,7 @@ I hope I'm not forgetting to mention anything! Although I'd be a little suprised
 Example Network:
 (This network probably won't work well for MNIST in practice)  
 
+~~~~
 Ensemble<vector<vector<double>>,  
          vector<vector<double>>,  
          Adam<>,  // network optimizer, in include/Optimzer/adam.hpp  
@@ -63,5 +64,5 @@ ensemble
     }  
     number_threads // the number of threads EACH network in the ensemble can use.  
 );  
-
+~~~~
 
