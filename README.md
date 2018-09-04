@@ -27,8 +27,10 @@ tanh
 softplus   
 
 ### Initializers (from torch.nn.init)
-xavier normal/uniform
-kaiming normal/uniform
+xavier normal
+xavier uniform
+kaiming normal
+kaiming uniform
   
 Most things can be parallelized if I thought it would make sense to do so. So like the dense layer has a parallel version. All activations do. With batch normalization, I'm not really sure how to parallelize it decently or if it really makes sense to for the scale of network I've been using it with.    
   
