@@ -13,7 +13,7 @@ RMSProp
    
 ### Layers:  
 dense    
-Convolution 
+Convolution   
 Batch normalization (This runs, but I haven't had a test to run on a cluster with a large enough network.)    
 Dropout  
 Evolutional Dropout (Again, this runs and accuracy is comparable to dropout but it is difficult to test.)
