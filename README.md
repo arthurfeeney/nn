@@ -38,7 +38,7 @@ It is really easy to make an ensemble which trains in parallel and averages all 
 
 Some parts are currently broken. Some parts a bit sloppy. I just play around and add things that seem interesting when I am bored.
 
-## Example ensemble initialization:
+## Example Ensemble Construction:
 
 ~~~~
 Ensemble<vector<vector<double>>, // type of input data  
@@ -70,3 +70,19 @@ ensemble
 );  
 ~~~~
 
+## Examples of Tasks that are handled entirely by the Ensemble class:
+### Initialization with Xavier Normal:  
+~~~~
+ensemble.initialize(init::xavier_normal<std::vector<std::vector<double>>, double>, 1);
+~~~~
+
+### Training:  
+Train the ensemble for 2 epochs, with the verbose setting true so that it prints every 1000th input.
+~~~~
+ensemble.train(2, true, 1000);
+~~~~
+
+### Ensemble Accurary on Test Dataset:  
+~~~~
+double test_acc = ensemble.test();
+~~~~
