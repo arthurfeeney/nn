@@ -65,7 +65,8 @@ public:
         conv_data = cd;
         conv_label = cl;
         if(batch_size % ensemble_size != 0) {
-            std::cout << "batch size should be a multiple of ensemble size." 
+            std::cout << "batch size should be a multiple of" 
+                      << " ensemble size." 
                       << '\n';
             throw std::invalid_argument("bad batch and ensemble size");
         }
@@ -235,7 +236,7 @@ private:
             }
             run_epoch(manager, net, net_id, epoch, verbosity, num_threads);
             
-            net.decay_learning_rate(epoch, lr_step, lr_decay);
+            //net.decay_learning_rate(epoch, lr_step, lr_decay);
         }
     }
 
@@ -247,10 +248,9 @@ private:
               size_t net_id, unsigned int epoch, unsigned int verbosity = 0,
               const size_t num_threads = 1) 
     {
-        std::cout << "running an epoch\n";
-        for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) {
-            if(net_id == 0 && verbosity && 
-               batch % (verbosity / manager.step_size()) == 0) 
+        for(size_t batch = 0; batch < manager.num_train_batches(); ++batch) 
+        {
+            if(net_id == 0 && verbosity && batch % (verbosity/manager.step_size()) == 0) 
             {
                 // only the 'main' net prints
                 std::cout << "epoch: " << epoch << " step: " << 

@@ -118,13 +118,15 @@ public:
         // assumes data is shuffled
        
         chunkified_batches.clear();
-        chunkified_batches.resize(0);
+        chunkified_batches.resize(train_size() / batch_size);
+        size_t i = 0;
         for(size_t index = 0; 
             index < train_size() - validation_labels.size(); 
             index += batch_size) 
         {
-            std::cout << batch_size;
-            chunkified_batches.push_back(chunk_batch(get_batch()));
+            //chunkified_batches.push_back(chunk_batch(get_batch()));
+            chunkified_batches[i] = chunk_batch(get_batch());
+            i += 1;
         }
     } 
 
