@@ -50,7 +50,7 @@ auto rand_cos(UniformRand<RealType>& g) {
 }
 
 std::pair<Dataset, Dataset> generate_data(int size) {
-    UniformRand<double> g(0, 1000);
+    UniformRand<double> g(0, 2);
 
     Dataset sin_data(size / 2);
     Dataset cos_data(size / 2);
@@ -89,7 +89,7 @@ std::pair<Dataset, Dataset> generate_data(int size) {
 
 int main() {
 
-    int train_size = 10000;
+    int train_size = 1000;
     int test_size = 1000;
 
     auto train = generate_data(train_size);
