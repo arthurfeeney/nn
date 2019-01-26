@@ -38,6 +38,10 @@ It is really easy to make an ensemble that trains in parallel and averages all t
 
 Some parts are currently broken. Some parts a bit sloppy. I just play around and add things that seem interesting when I am bored.
 
+## In-Depth Examples:
+
+An in-depth example can be found in the examples/ directory. There is a file called classify_sin_cos.cpp and that directories README contains a walkthrough of what the source code contains.
+
 ## Example Ensemble Construction:
 
 ~~~~
@@ -87,10 +91,8 @@ ensemble.train(2, true, 1000);
 double test_acc = ensemble.test();
 ~~~~
 
-
-
 ## MNIST Example:
-This shows how to achieve decent accuracy on a classic dataset. The settings are not at all optimal, but it is still about to achieve about 97% accuracy on the MNIST test dataset. 
+This is just to show that the implementation is able to work on more rigorous datasets. The network below is able to achieve decent accuracy on a classic dataset. The settings are not at all optimal, but it is still about to achieve about 97% accuracy on the MNIST test dataset. 
 
 ~~~~
 Ensemble<vector<vector<double>>, 
@@ -130,3 +132,6 @@ net.train(10, true, 1000);
 
 double test_accuracy = net.test();
 ~~~~
+
+
+
