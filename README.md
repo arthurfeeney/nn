@@ -2,6 +2,10 @@
 
 Main has a test using the ensemble class for MNIST dataset, it may not be a good test, but just whatever I have been messing around with... Requires -std=c++17. It is a header-only library and the only dependeny is boost/algorithm, so it should be simple to setup. Everything is implemented from scratch; matrix multiplication up :)
 
+## In-Depth Examples:
+
+An in-depth example can be found in the examples/ directory. There is a file called classify_sin_cos.cpp and that directories README contains a walkthrough of what the source code contains.
+
 ## Implements:   
 ### Optimizers:    
 Adam   
@@ -13,7 +17,7 @@ RMSProp
    
 ### Layers:  
 dense    
-Convolution (Broke this trying to implement it in a different way...)
+Convolution (Currently Broken, tried to implement it in a different way...)     
 Batch normalization (This runs, but I haven't had a test to run on a cluster with a large enough network.)    
 Dropout  
 Evolutional Dropout
@@ -26,7 +30,7 @@ Sigmoid
 tanh  
 softplus   
 
-### Initializers (from torch.nn.init)
+### Initializers (same as torch.nn.init)
 xavier normal  
 xavier uniform  
 kaiming normal  
@@ -38,9 +42,6 @@ It is really easy to make an ensemble that trains in parallel and averages all t
 
 Some parts are currently broken. Some parts a bit sloppy. I just play around and add things that seem interesting when I am bored.
 
-## In-Depth Examples:
-
-An in-depth example can be found in the examples/ directory. There is a file called classify_sin_cos.cpp and that directories README contains a walkthrough of what the source code contains.
 
 ## Example Ensemble Construction:
 
