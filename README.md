@@ -1,5 +1,7 @@
 # nn: A toy library for making neural networks in C++.   
 
+This is only intended for me to play around with and learn some details about neural networks.
+
 Main has a test using the ensemble class for MNIST dataset, it may not be a good test, but just whatever I have been messing around with... Requires -std=c++17. It is a header-only library and the only dependeny is boost/algorithm, so it should be simple to setup. Everything is implemented from scratch; matrix multiplication up :)
 
 ## In-Depth Examples:
